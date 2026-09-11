@@ -92,8 +92,8 @@ const esc = (s) => String(s == null ? "" : s)
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
-  document.title = C.schoolName + " — Label Maker";
-  $("#headerSchool").textContent = C.schoolName;
+  document.title = C.appTitle;
+  $("#headerSchool").textContent = C.appTitle;
   $("#footerText").textContent = C.footerLine + (C.contactEmail ? " · " + C.contactEmail : "");
   $("#footerYear").textContent = new Date().getFullYear();
   const mark = $("#brandMark");

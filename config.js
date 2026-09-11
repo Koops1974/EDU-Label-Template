@@ -9,9 +9,10 @@
 
 const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
-   *  1. SCHOOL NAME & BRANDING
+   *  1. TOOL TITLE & SCHOOL BRANDING
    * ---------------------------------------------------------------- */
-  schoolName: "My School Name",          // Full name of the school
+  appTitle: "Avery Label Maker for Schools", // Shown in the page header / tab title
+  schoolName: "My School Name",          // Full school name printed on each label
   shortName: "My School",                // Used where there is less space
   logoText: "MY",                        // 2-4 letter monogram shown if no logo image is set
 
