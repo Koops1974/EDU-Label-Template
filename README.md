@@ -18,6 +18,10 @@ Everything runs **in your browser**. Upload a CSV, choose your Avery sheet, clic
 
 ---
 
+## 🖨️ Print-settings guide
+
+A printable step-by-step guide for getting perfect label alignment on **Windows** and **Chromebooks** is included at **`print-guide.html`** (linked from the tool's sidebar and footer). It covers the five settings that matter: A4 paper size, **100% scale**, **None** margins, background graphics **On**, and headers/footers **Off**.
+
 ## 🚀 Hosting on GitHub Pages
 
 1. Create a GitHub repository (e.g. `label-maker`).
@@ -69,7 +73,7 @@ Mia Thompson,7A,Mathematics,Year 7
 
 - Column names are auto-detected (see `columnAliases`); you can re-map them manually in the page.
 - Empty pupil names are skipped by default.
-- A `sample-pupils.csv` is included; the page's **Load sample CSV** button uses the same data.
+- A `sample-pupils.csv` is included; the page's **Load sample CSV** button uses the same data, and there's a **Download template (.csv)** button so schools can grab a copy of the exact structure.
 
 ---
 
@@ -107,7 +111,8 @@ This tool is designed to be safe for pupil data:
 ├── styles.css              # Screen + print (exact A4 @100%) styles
 ├── app.js                  # Logic: CSV → mapping → sheets → print
 ├── config.js               # ⭐ School branding & defaults (edit this)
-├── sample-pupils.csv       # Example data
+├── print-guide.html        # Printable Windows/Chromebook print-settings guide
+├── sample-pupils.csv       # Example data (downloadable from the page)
 ├── lib/papaparse.min.js    # Vendored CSV parser (offline)
 └── README.md
 ```

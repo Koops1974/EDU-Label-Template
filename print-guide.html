@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print Settings Guide — Label Maker for Schools</title>
+<meta name="description" content="The exact printer settings needed for Windows and Chromebook to keep Avery labels perfectly aligned.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖨️</text></svg>">
+
+<style>
+  /* ---------- Guide page only ---------- */
+  .guide-main {
+    max-width: 980px;
+    margin: 22px auto;
+    padding: 0 22px 40px;
+  }
+  .guide-hero {
+    background: linear-gradient(135deg, #0b1b3a, #1e3a8a);
+    color: #fff;
+    border-radius: 14px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+  }
+  .guide-hero h2 { margin: 0 0 8px; font-size: 26px; }
+  .guide-hero p { margin: 4px 0; color: #dbe6ff; }
+  .guide-hero .back-link { display: inline-block; margin-top: 12px; color: #fff; font-size: 13px; }
+  .golden {
+    background: #fff8e6;
+    border: 1px solid #f5d98b;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 22px;
+  }
+  .golden h3 { margin: 0 0 10px; font-size: 16px; color: #8a5a00; }
+  .golden ol { margin: 0; padding-left: 20px; }
+  .golden li { margin: 6px 0; font-size: 14.5px; }
+  .golden li strong { color: #7c1d1d; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } }
+  .os-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    background: #fff;
+  }
+  .os-card h3 { margin: 0 0 4px; font-size: 18px; display: flex; align-items: center; gap: 8px; }
+  .os-card .os-sub { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+  .step { display: flex; gap: 12px; margin: 0 0 16px; }
+  .step-num {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--primary); color: #fff; font-weight: 700; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-body h4 { margin: 0 0 6px; font-size: 14px; }
+  .step-body p { margin: 0 0 6px; font-size: 14px; color: var(--ink); }
+  .setting-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+  .setting-table th, .setting-table td {
+    border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top;
+  }
+  .setting-table th { background: #f3f6fc; }
+  .setting-table td.yes { color: var(--ok); font-weight: 600; }
+  .setting-table td.no  { color: #b91c1c; font-weight: 600; }
+  .tip {
+    background: #eef6ff; border-left: 4px solid var(--primary);
+    padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin: 16px 0;
+  }
+  .warn {
+    background: #fdf0ee; border-left: 4px solid #b91c1c;
+    padding: 12px 16px; border-radius: 8px; font-size: 13.5px; margin: 16px 0;
+  }
+  .probs { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+  .probs th, .probs td { border: 1px solid var(--border); padding: 10px 12px; text-align: left; }
+  .probs th { background: #f3f6fc; }
+  .guide-footer { margin-top: 28px; font-size: 12px; color: var(--muted); text-align: center; }
+  .print-this { margin-top: 18px; }
+  @media print {
+    .guide-hero .back-link, .print-this, .app-header { display: none !important; }
+    body { background: #fff; }
+    .guide-main { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark">🖨️</span>
+      <div class="brand-text">
+        <h1 class="brand-title">Print Settings Guide</h1>
+        <p class="brand-sub">Getting perfect label alignment on Windows &amp; Chromebook</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="guide-main">
+  <div class="guide-hero">
+    <h2>Keep your Avery labels perfectly aligned</h2>
+    <p>Labels only line up if the browser prints the page <strong>exactly as designed</strong> — that means 100% scale, no margins, no headers/footers, and background graphics switched on.</p>
+    <a class="back-link" href="index.html">← Back to the label maker</a>
+  </div>
+
+  <div class="golden">
+    <h3>The 5 golden rules (applies on every device)</h3>
+    <ol>
+      <li><strong>Destination:</strong> choose your printer (or <em>Save as PDF</em>).</li>
+      <li><strong>Paper size: A4</strong> — not “Letter”, not “A5”.</li>
+      <li><strong>Scale: 100%</strong> — also called <em>Actual size</em> or <em>Default</em>. Never use “Fit to page”.</li>
+      <li><strong>Margins: None</strong> — the tool prints its own margins.</li>
+      <li><strong>Background graphics: ON,</strong> and <strong>Headers &amp; footers: OFF</strong>.</li>
+    </ol>
+  </div>
+
+  <div class="cols">
+
+    <!-- ==================== WINDOWS ==================== -->
+    <div class="os-card">
+      <h3>🪟 Windows</h3>
+      <p class="os-sub">Google Chrome or Microsoft Edge — the settings are nearly identical in both.</p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Open the print dialog</h4>
+          <p>Click the <strong>🖨️ Print / Save as PDF</strong> button in the label maker (or press <kbd>Ctrl</kbd> + <kbd>P</kbd>).</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Destination</h4>
+          <p>Pick your label-ready printer, or choose <strong>“Save as PDF”</strong> to make a PDF file you can print later.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Pages &amp; paper size</h4>
+          <p>Set <strong>Pages: All</strong>. Under <strong>More settings → Paper size</strong>, select <strong>A4</strong>.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Critical — check the “More settings” box</h4>
+          <table class="setting-table">
+            <tr><th>Setting</th><th>Set to</th></tr>
+            <tr><td>Paper size</td><td class="yes">A4</td></tr>
+            <tr><td>Margins</td><td class="yes">None</td></tr>
+            <tr><td>Scale</td><td class="yes">100% / Default</td></tr>
+            <tr><td>Headers and footers</td><td class="no">Off (unchecked)</td></tr>
+            <tr><td>Background graphics</td><td class="yes">On (checked)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Print</h4>
+          <p>Hit <strong>Print</strong>. Run one test page first with the dashed guides on, then reuse the sheet of labels.</p>
+        </div>
+      </div>
+
+      <div class="tip">
+        💡 <strong>Tip:</strong> the “Scale” setting is hidden until you tick <em>More settings</em>. It’s the #1 cause of misaligned labels.
+      </div>
+    </div>
+
+    <!-- ==================== CHROMEBOOK ==================== -->
+    <div class="os-card">
+      <h3>💻 Chromebook</h3>
+      <p class="os-sub">Uses Chrome — same dialog, a slightly different layout. Works with any network printer the school manages.</p>
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Open the print dialog</h4>
+          <p>Click the <strong>🖨️ Print / Save as PDF</strong> button (or press <kbd>Ctrl</kbd> + <kbd>P</kbd>).</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Destination</h4>
+          <p>Choose the printer under <strong>Destination</strong>, or pick <strong>“Save as PDF”</strong>. Many Chromebooks also show school printers here automatically.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Pages</h4>
+          <p>Set <strong>Pages: All</strong>, and select <strong>Color</strong> (or black &amp; white — your choice — but keep the accent bars coloured for best results).</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Critical — open “More settings”</h4>
+          <table class="setting-table">
+            <tr><th>Setting</th><th>Set to</th></tr>
+            <tr><td>Paper size</td><td class="yes">A4</td></tr>
+            <tr><td>Margins</td><td class="yes">None</td></tr>
+            <tr><td>Scale</td><td class="yes">100% (not “Fit to printable area”)</td></tr>
+            <tr><td>Headers and footers</td><td class="no">Off (unchecked)</td></tr>
+            <tr><td>Background graphics</td><td class="yes">On (checked)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Print</h4>
+          <p>Tap <strong>Print</strong>. Chromebooks default some printers to <em>Letter</em> — double-check it says <strong>A4</strong> before printing.</p>
+        </div>
+      </div>
+
+      <div class="warn">
+        ⚠️ Chromebooks sometimes select <em>“Fit to printable area”</em> automatically — if you see that, change it to a fixed <strong>100% / Default</strong>. This is the most common reason labels come out misaligned from a Chromebook.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Common problems -->
+  <h3 style="margin-top:28px;">Labels not lining up? Check these</h3>
+  <table class="probs">
+    <tr><th>Problem</th><th>Fix</th></tr>
+    <tr>
+      <td>Everything is slightly too small / has a white border around it</td>
+      <td>Scale is not 100% — change “Fit to page” back to <strong>100% / Default</strong>.</td>
+    </tr>
+    <tr>
+      <td>Labels shifted sideways or down</td>
+      <td>Paper size is wrong (Letter instead of A4) or margins are not <strong>None</strong>.</td>
+    </tr>
+    <tr>
+      <td>Text/boxes all grey or invisible</td>
+      <td><strong>Background graphics</strong> is off — switch it on.</td>
+    </tr>
+    <tr>
+      <td>Extra line prints at the top showing the URL/date</td>
+      <td><strong>Headers and footers</strong> is on — switch it off.</td>
+    </tr>
+    <tr>
+      <td>Colour comes out pale</td>
+      <td>Ensure printer is set to <strong>Color</strong> (not Greyscale) for the accent bars.</td>
+    </tr>
+  </table>
+
+  <div class="tip">
+    🧪 <strong>Test-print routine:</strong> ① print once with dashed guides ON on plain paper, ② hold it behind a blank label sheet against a window, ③ confirm the dashed boxes sit on the stickers, ④ switch guides OFF and print for real.
+  </div>
+
+  <div class="guide-footer">
+    This guide is printable — use the print button below. · <span id="footerText">Label Maker for Schools — free, open source, GDPR-friendly</span>
+  </div>
+  <div class="print-this">
+    <button class="btn-primary" onclick="window.print()">🖨️ Print this guide</button>
+  </div>
+</main>
+
+<script src="config.js"></script>
+<script>
+  document.getElementById("footerText") && (document.getElementById("footerText").textContent = SCHOOL_CONFIG.footerLine);
+</script>
+</body>
+</html>

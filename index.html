@@ -44,7 +44,10 @@
       <p class="upload-error" id="uploadError" hidden></p>
     </div>
 
-    <button class="btn-ghost btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
+    <div class="sample-row">
+      <button class="btn-ghost btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
+      <a class="btn-ghost btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
+    </div>
 
     <!-- File status -->
     <div id="fileStatus" class="file-status" hidden>
@@ -102,6 +105,7 @@
         <li>GDPR-friendly — everything runs in your browser</li>
         <li>Works offline once opened</li>
       </ul>
+      <p class="hint-text"><a class="linklike" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print-settings guide (Windows &amp; Chromebook)</a></p>
     </div>
 
     <button class="btn-primary" id="printBtn">🖨️ Print / Save as PDF</button>
@@ -121,6 +125,8 @@
 
 <footer class="app-footer">
   <span id="footerText">Label Maker for Schools — free, open source, GDPR-friendly</span>
+  <span class="footer-sep">·</span>
+  <a class="footer-link" href="print-guide.html" target="_blank" rel="noopener">Print-settings guide</a>
   <span class="footer-sep">·</span>
   <span>© <span id="footerYear"></span></span>
 </footer>

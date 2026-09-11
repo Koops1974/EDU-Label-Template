@@ -99,6 +99,11 @@ body {
 .btn-ghost:hover { background: #f3f7ff; }
 .btn-sm { margin-top: 10px; }
 
+.sample-row { display: flex; gap: 8px; align-items: center; }
+.sample-row .btn-ghost { display: inline-flex; align-items: center; justify-content: center; }
+a.btn-ghost { text-decoration: none; text-align: center; }
+.download-link { margin-top: 10px; }
+
 /* ---------- Field mapping ---------- */
 .field-map { margin: 10px 0; }
 .field-map label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
@@ -226,6 +231,8 @@ body {
   font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap;
 }
 .footer-sep { color: var(--border); }
+.footer-link { color: var(--primary-dark); text-decoration: none; }
+.footer-link:hover { text-decoration: underline; }
 
 /* ============================================================
    PRINT — exact A4 at 100%. Hide the whole UI.
