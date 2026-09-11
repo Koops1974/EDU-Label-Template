@@ -14,7 +14,7 @@ const SCHOOL_CONFIG = {
   appTitle: "Avery Label Maker for Schools", // Shown in the page header / tab title
   schoolName: "My School Name",          // Full school name printed on each label
   shortName: "My School",                // Used where there is less space
-  logoText: "MY",                        // 2-4 letter monogram shown if no logo image is set
+  logoText: "ALM",                       // 2-4 letter monogram shown if no logo image is set
 
   /* School crest / logo.
    * OPTION A – upload later from the page (easiest, per-session only).
