@@ -22,8 +22,8 @@
     <div class="gdpr-badge" id="gdprBadge">
       <span class="gdpr-dot"></span>
       <div>
-        <strong>100% on-device</strong>
-        <small>No data ever leaves this computer</small>
+        <strong>Your pupil data stays on your device</strong>
+        <small>Nothing is uploaded to a server</small>
       </div>
     </div>
   </div>
@@ -44,9 +44,13 @@
       <p class="upload-error" id="uploadError" hidden></p>
     </div>
 
+    <div class="download-block">
+      <a class="btn-primary download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download CSV template</a>
+      <p class="hint-text">Blank template with the right column headings — open it in Excel or Google Sheets, add your pupils, then drop it here.</p>
+    </div>
+
     <div class="sample-row">
       <button class="btn-ghost btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
-      <a class="btn-ghost btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
     </div>
 
     <!-- File status -->
@@ -97,13 +101,23 @@
       <p class="hint-text">Turn the guides off for the final run. Print at <strong>100% / Actual size</strong>, margins <strong>None</strong>, background graphics <strong>On</strong>.</p>
     </details>
 
-    <!-- Share/submission note (optional) -->
+    <!-- How it works -->
     <div class="about-block">
-      <h3>About this tool</h3>
+      <h3>How it works</h3>
+      <ol class="how-list">
+        <li><strong>Download the CSV template</strong> (above) and add your pupils' names, classes and subjects.</li>
+        <li><strong>Drop the file here</strong> — your columns are mapped for you automatically.</li>
+        <li><strong>Pick your Avery sheet, preview,</strong> then print at 100% scale (or save as PDF).</li>
+      </ol>
+    </div>
+
+    <!-- Privacy -->
+    <div class="about-block privacy-block">
+      <h3>Your privacy</h3>
       <ul>
-        <li>Free to use &amp; share between schools</li>
-        <li>GDPR-friendly — everything runs in your browser</li>
+        <li>Your pupil data stays on your device — nothing is uploaded to a server</li>
         <li>Works offline once opened</li>
+        <li>Free to use &amp; share between schools</li>
       </ul>
       <p class="hint-text"><a class="linklike" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print-settings guide (Windows &amp; Chromebook)</a></p>
     </div>
