@@ -1,0 +1,660 @@
+/*****************************************************************************
+ *  LABEL MAKER FOR SCHOOLS — application logic
+ *  Fully client-side. No data is uploaded anywhere.
+ *****************************************************************************/
+"use strict";
+
+/* =====================================================================
+ *  AVERY / compatible A4 template geometry (millimetres)
+ *  Sourced from the glabels open template set (as published by
+ *  sheetstolabels.com) and Avery's own template pages.
+ * ===================================================================== */
+const AVERY_TEMPLATES = {
+  L7160: {
+    code: "L7160", cols: 3, rows: 7,
+    labelW: 63.99, labelH: 38.1,
+    originX: 7.48, originY: 15.49,
+    pitchX: 66.04, pitchY: 38.1,
+    radius: 1.76, sharp: false,
+    note: "21 per sheet · 63.5 × 38.1 mm",
+    short: "Address labels",
+  },
+  L7163: {
+    code: "L7163", cols: 2, rows: 7,
+    labelW: 99.09, labelH: 38.1,
+    originX: 3.35, originY: 15.17,
+    pitchX: 103.01, pitchY: 38.1,
+    radius: 1.76, sharp: false,
+    note: "14 per sheet · 99.1 × 38.1 mm",
+    short: "Wide address / shipping",
+  },
+  J8160: {
+    code: "J8160", cols: 3, rows: 7,
+    labelW: 63.99, labelH: 38.1,
+    originX: 7.48, originY: 15.49,
+    pitchX: 66.04, pitchY: 38.1,
+    radius: 1.76, sharp: false,
+    note: "21 per sheet · 63.5 × 38.1 mm (inkjet)",
+    short: "Inkjet address labels",
+  },
+  L4780: {
+    code: "L4780", cols: 4, rows: 10,
+    labelW: 48.5, labelH: 25.4,
+    originX: 8.0, originY: 21.5,
+    pitchX: 48.5, pitchY: 25.4,
+    radius: 0, sharp: true,
+    note: "40 per sheet · 48.5 × 25.4 mm",
+    short: "Multipurpose mini labels",
+  },
+  L7169: {
+    code: "L7169", cols: 2, rows: 2,
+    labelW: 99.09, labelH: 138.99,
+    originX: 5.01, originY: 7.06,
+    pitchX: 101.49, pitchY: 138.99,
+    radius: 2.12, sharp: false,
+    note: "4 per sheet · 99.1 × 139 mm",
+    short: "Large parcel labels",
+  },
+};
+
+const PAGE_W = 210, PAGE_H = 297; // A4 portrait
+
+/* =====================================================================
+ *  App state
+ * ===================================================================== */
+const state = {
+  columns: [],
+  rows: [],
+  mapping: { pupilName: null, className: null, subject: null, yearGroup: null, school: null },
+  template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
+  layout: "classic",
+  logoDataUrl: null,
+  opts: {
+    showGuides: true,
+    color: true,
+    skipBlanks: true,
+    showSchoolTop: SCHOOL_CONFIG.label.showSchoolNameTop,
+    showClassName: SCHOOL_CONFIG.label.showClassName,
+    showSubject: SCHOOL_CONFIG.label.showSubject,
+    showYearGroup: SCHOOL_CONFIG.label.showYearGroup,
+  },
+};
+
+/* =====================================================================
+ *  Small helpers
+ * ===================================================================== */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const esc = (s) => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;");
+
+function setupBranding() {
+  const C = SCHOOL_CONFIG;
+  document.title = C.schoolName + " — Label Maker";
+  $("#headerSchool").textContent = C.schoolName;
+  $("#footerText").textContent = C.footerLine + (C.contactEmail ? " · " + C.contactEmail : "");
+  $("#footerYear").textContent = new Date().getFullYear();
+  const mark = $("#brandMark");
+  mark.textContent = C.logoText || C.shortName.slice(0, 2).toUpperCase();
+  mark.style.background = C.primaryColor;
+  document.documentElement.style.setProperty("--primary", C.primaryColor);
+  document.documentElement.style.setProperty("--primary-dark", C.primaryColor);
+}
+
+/* =====================================================================
+ *  Template cards
+ * ===================================================================== */
+function renderTemplateList() {
+  const box = $("#templateList");
+  box.innerHTML = "";
+  Object.keys(AVERY_TEMPLATES).forEach((code) => {
+    const t = AVERY_TEMPLATES[code];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "template-card" + (state.template === code ? " selected" : "");
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", state.template === code ? "true" : "false");
+    btn.innerHTML =
+      `<span class="t-code">${t.code}</span>` +
+      `<div class="t-size">${t.note}</div>` +
+      `<div class="t-note">${t.short}</div>`;
+    btn.addEventListener("click", () => {
+      state.template = code;
+      renderTemplateList();
+      renderAll();
+    });
+    box.appendChild(btn);
+  });
+}
+
+/* =====================================================================
+ *  CSV handling
+ * ===================================================================== */
+function handleCsvText(text, fileName) {
+  const parsed = Papa.parse(text, {
+    header: true, skipEmptyLines: "greedy", trimHeaders: true,
+    transformHeader: (h) => h.replace(/^\uFEFF/, "").trim(),
+  });
+  if (parsed.errors && parsed.errors.length) {
+    showUploadError("Could not read that file: " + parsed.errors[0].message);
+    return;
+  }
+  const rows = parsed.data.filter((r) => r && Object.keys(r).length > 0);
+  if (!rows.length) {
+    showUploadError("The CSV has no data rows.");
+    return;
+  }
+  state.columns = parsed.meta.fields.filter(Boolean);
+  state.rows = rows;
+  autoMap();
+  renderMapping();
+  updateFileStatus(fileName, rows.length);
+  renderAll();
+}
+
+function showUploadError(msg) {
+  const el = $("#uploadError");
+  el.textContent = "⚠ " + msg;
+  el.hidden = false;
+}
+
+function autoMap() {
+  const C = SCHOOL_CONFIG.columnAliases;
+  const cols = state.columns;
+  const lower = cols.map((c) => c.toLowerCase());
+  const find = (aliases) => {
+    // exact match (case-insensitive)
+    for (const c of cols) {
+      const cl = c.toLowerCase();
+      if (aliases.some((a) => a.toLowerCase() === cl)) return { kind: "col", value: c };
+    }
+    // substring match either direction
+    for (const c of cols) {
+      const cl = c.toLowerCase();
+      for (const a of aliases) {
+        const al = a.toLowerCase();
+        if (cl.includes(al) || al.includes(cl)) return { kind: "col", value: c };
+      }
+    }
+    return null;
+  };
+  state.mapping = {
+    pupilName: find(C.pupilName) || { kind: "col", value: cols[0] || "" },
+    className: find(C.className),
+    subject: find(C.subject),
+    yearGroup: find(C.yearGroup),
+    school: find(C.school) || { kind: "fixed", value: SCHOOL_CONFIG.schoolName },
+  };
+}
+
+/* =====================================================================
+ *  Field-mapping UI
+ * ===================================================================== */
+const MAPPING_FIELDS = [
+  { key: "pupilName", label: "Pupil name" },
+  { key: "className", label: "Class / form" },
+  { key: "subject",   label: "Subject" },
+  { key: "yearGroup", label: "Year group" },
+  { key: "school",    label: "School name" },
+];
+
+function mappingControl(field) {
+  const wrap = document.createElement("div");
+  wrap.className = "field-map";
+
+  const lab = document.createElement("label");
+  lab.textContent = MAPPING_FIELDS.find((f) => f.key === field.key).label;
+  wrap.appendChild(lab);
+
+  const row = document.createElement("div");
+  row.style.display = "flex";
+  row.style.gap = "8px";
+
+  const select = document.createElement("select");
+  const opts = [{ kind: "hide", value: "", label: "— Hidden —" }];
+  state.columns.forEach((c) => opts.push({ kind: "col", value: c, label: "Column: " + c }));
+  opts.push({ kind: "fixed", value: "__fixed__", label: "✏️ Fixed text…" });
+  opts.forEach((o) => {
+    const opt = document.createElement("option");
+    opt.value = o.value;
+    opt.textContent = o.label;
+    opt.dataset.kind = o.kind;
+    if (o.kind === "hide") opt.value = "";
+    select.appendChild(opt);
+  });
+
+  const cur = state.mapping[field.key];
+  select.value = cur ? (cur.kind === "col" ? cur.value : (cur.kind === "fixed" ? "__fixed__" : "")) : "";
+  if (cur && cur.kind === "col" && !state.columns.includes(cur.value)) select.value = "";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Type fixed text…";
+  input.value = (cur && cur.kind === "fixed") ? cur.value : "";
+  input.className = "fixed-input";
+  input.style.cssText = "flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;";
+  input.hidden = select.value !== "__fixed__";
+  if (cur && cur.kind === "fixed") select.style.flex = "0 1 auto";
+
+  select.style.cssText = "flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;";
+  row.appendChild(select);
+  row.appendChild(input);
+  wrap.appendChild(row);
+
+  const commit = () => {
+    const v = select.value;
+    if (v === "") state.mapping[field.key] = { kind: "hide" };
+    else if (v === "__fixed__") {
+      state.mapping[field.key] = { kind: "fixed", value: input.value.trim() || SCHOOL_CONFIG.schoolName };
+      input.hidden = false;
+    } else {
+      state.mapping[field.key] = { kind: "col", value: v };
+      input.hidden = true;
+    }
+    renderAll();
+  };
+  select.addEventListener("change", () => {
+    input.hidden = select.value !== "__fixed__";
+    if (select.value === "__fixed__") setTimeout(() => input.focus(), 0);
+    commit();
+  });
+  input.addEventListener("change", commit);
+  input.addEventListener("input", commit);
+
+  return wrap;
+}
+
+function renderMapping() {
+  const nameRow = $("#mappingRowName"), clsRow = $("#mappingRowClass"),
+        subjRow = $("#mappingRowSubject"), yearRow = $("#mappingRowYear"),
+        schRow = $("#mappingRowSchool");
+  const clear = (el) => { while (el.firstChild) el.removeChild(el.firstChild); };
+  clear(nameRow); clear(clsRow); clear(subjRow); clear(yearRow); clear(schRow);
+  nameRow.appendChild(mappingControl({ key: "pupilName" }));
+  clsRow.appendChild(mappingControl({ key: "className" }));
+  subjRow.appendChild(mappingControl({ key: "subject" }));
+  yearRow.appendChild(mappingControl({ key: "yearGroup" }));
+  schRow.appendChild(mappingControl({ key: "school" }));
+}
+
+/* =====================================================================
+ *  Label content build
+ * ===================================================================== */
+function fieldValue(row, fieldKey) {
+  const m = state.mapping[fieldKey];
+  if (!m || m.kind === "hide") return "";
+  if (m.kind === "fixed") return m.value || "";
+  return (row[m.value] == null ? "" : String(row[m.value]).trim());
+}
+
+function schoolName(row) {
+  return fieldValue(row, "school") || SCHOOL_CONFIG.schoolName;
+}
+
+function effectiveLogoSrc() {
+  if (state.logoDataUrl) return state.logoDataUrl;
+  if (SCHOOL_CONFIG.logo) return SCHOOL_CONFIG.logo;
+  return null;
+}
+
+/* Outermost row layout: which pupils fill which cells.
+ * Returns flat array of { rowData, index } for filled cells (index = cell number 0-based). */
+function planFills() {
+  const t = AVERY_TEMPLATES[state.template];
+  const perSheet = t.cols * t.rows;
+  let pupils = state.rows.slice();
+  if (state.opts.skipBlanks) {
+    pupils = pupils.filter((r) => fieldValue(r, "pupilName") !== "");
+  }
+  const fills = [];
+  pupils.forEach((r, i) => {
+    const sheet = Math.floor(i / perSheet);
+    const cell = i % perSheet;
+    fills.push({ rowData: r, sheet, cell });
+  });
+  return { fills, perSheet };
+}
+
+/* Font sizing scaled to the label's physical height (in mm). */
+function fontScale(labelH) {
+  return clamp(Math.sqrt(labelH / 38.1), 0.62, 1.85); // 38.1mm label = scale 1
+}
+
+function labelContentHtml(row) {
+  const C = SCHOOL_CONFIG;
+  const showName = C.label.showPupilName && fieldValue(row, "pupilName") !== "";
+  const name = fieldValue(row, "pupilName");
+  const cls = fieldValue(row, "className");
+  const subj = fieldValue(row, "subject");
+  const yr = fieldValue(row, "yearGroup");
+  const o = state.opts;
+  const logo = effectiveLogoSrc();
+  const useColor = o.color;
+
+  const parts = [];
+
+  if (o.showSchoolTop) {
+    const text = esc(schoolName(row));
+    const logoHtml = logo
+      ? `<img class="lbl-logo" src="${esc(logo)}" alt="">`
+      : "";
+    parts.push(
+      `<div class="label-school${useColor ? " bar" : ""}" ` +
+      `style="--bar-bg:${C.primaryColor};--bar-text:${C.printTextColor};">
+         ${logoHtml}<span class="lbl-school-text">${text}</span>
+       </div>`
+    );
+  }
+
+  const namePart = showName
+    ? `<div class="label-name">${esc(name)}</div>`
+    : "";
+
+  let subjectPart = "";
+  if (o.showSubject && subj) {
+    subjectPart = `<div class="label-subject">${esc(subj)}</div>`;
+  }
+
+  const metaBits = [];
+  if (o.showClassName && cls) metaBits.push(`${C.label.showClassLabel}${esc(cls)}`);
+  if (o.showYearGroup && yr) metaBits.push(esc(yr));
+  const metaPart = metaBits.length
+    ? `<div class="label-meta"><span>${metaBits.join("</span><span>")}</span></div>`
+    : "";
+
+  return { namePart, subjectPart, metaPart, parts, name };
+}
+
+function buildLabelCell(row, t, cellIndex) {
+  const col = cellIndex % t.cols;
+  const rowIdx = Math.floor(cellIndex / t.cols);
+  const left = t.originX + col * t.pitchX;
+  const top = t.originY + rowIdx * t.pitchY;
+
+  const C = SCHOOL_CONFIG;
+  const { namePart, subjectPart, metaPart, parts } = labelContentHtml(row);
+
+  const labelH = t.labelH;
+  const fs = fontScale(labelH);
+  const outerTextColor = C.defaultTextColor;
+  const accentSoft = hexToRgba(C.accentColor, 0.28);
+
+  const schoolTop = parts.join("");
+
+  const layoutCls = " " + state.layout;
+  const cssVars =
+    `--lh:${labelH.toFixed(2)}mm;` +
+    `--lw:${t.labelW.toFixed(2)}mm;` +
+    `--name-fs:${(5.2 * fs).toFixed(2)}mm;` +
+    `--school-fs:${(2.9 * fs).toFixed(2)}mm;` +
+    `--subj-fs:${(3.0 * fs).toFixed(2)}mm;` +
+    `--meta-fs:${(2.5 * fs).toFixed(2)}mm;` +
+    `--r:${t.radius}mm;` +
+    `--accent-soft:${accentSoft};` +
+    `--bar-bg:${C.primaryColor};` +
+    `--bar-text:${C.printTextColor};` +
+    `--label-bg:#fff;`;
+
+  const colorCls = state.opts.color ? " color" : "";
+  const guidesCls = state.opts.showGuides ? " guides" : "";
+
+  return (
+    `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+    `width:${t.labelW.toFixed(2)}mm;height:${labelH.toFixed(2)}mm;${cssVars}">` +
+      `<div class="label-inner${layoutCls}${colorCls}" style="color:${outerTextColor};">` +
+        `${schoolTop}${namePart}${subjectPart}${metaPart}` +
+      `</div>` +
+    `</div>`
+  );
+}
+
+function hexToRgba(hex, alpha) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return "rgba(29,78,216," + alpha + ")";
+  const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/* =====================================================================
+ *  Sheet rendering
+ * ===================================================================== */
+function emptySheetHtml() {
+  const t = AVERY_TEMPLATES[state.template];
+  let cells = "";
+  for (let i = 0; i < t.cols * t.rows; i++) {
+    const col = i % t.cols, rowI = Math.floor(i / t.cols);
+    const left = t.originX + col * t.pitchX, top = t.originY + rowI * t.pitchY;
+    const guides = state.opts.showGuides ? " guides" : "";
+    cells +=
+      `<div class="label-cell${guides}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+      `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;"></div>`;
+  }
+  return `<div class="sheet"><div class="sheet-pad">${cells}</div></div>`;
+}
+
+function buildSheets(printMode) {
+  const t = AVERY_TEMPLATES[state.template];
+  const { fills, perSheet } = planFills();
+  const sheetsHtml = [];
+  const totalSheets = fills.length ? Math.max(...fills.map((f) => f.sheet)) + 1 : 0;
+
+  for (let s = 0; s < totalSheets; s++) {
+    const sheetFills = fills.filter((f) => f.sheet === s);
+    const cellsByCell = {};
+    sheetFills.forEach((f) => { cellsByCell[f.cell] = f.rowData; });
+    let cells = "";
+    for (let i = 0; i < perSheet; i++) {
+      if (cellsByCell[i] !== undefined) {
+        cells += buildLabelCell(cellsByCell[i], t, i);
+      } else {
+        const col = i % t.cols, rowI = Math.floor(i / t.cols);
+        const guides = state.opts.showGuides ? " guides" : "";
+        cells +=
+          `<div class="label-cell${guides}" style="left:${(t.originX + col * t.pitchX).toFixed(2)}mm;` +
+          `top:${(t.originY + rowI * t.pitchY).toFixed(2)}mm;` +
+          `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;"></div>`;
+      }
+    }
+    const cls = printMode ? "sheet print-sheet" : "sheet";
+    sheetsHtml.push(`<div class="${cls}"><div class="sheet-pad">${cells}</div></div>`);
+  }
+  return sheetsHtml;
+}
+
+function renderPreview() {
+  const container = $("#sheetContainer");
+  const meta = $("#previewMeta");
+  const t = AVERY_TEMPLATES[state.template];
+  const n = planFills().fills.length;
+  const sheets = n ? buildSheets(false) : [emptySheetHtml()];
+  container.innerHTML = sheets.join("");
+  if (n) {
+    const sheetsNeeded = Math.ceil(n / (t.cols * t.rows));
+    meta.textContent = `${n} label${n === 1 ? "" : "s"} · ${sheetsNeeded} sheet${sheetsNeeded === 1 ? "" : "s"} of ${t.code}`;
+  } else {
+    meta.textContent = "Preview of " + t.code + " sheet";
+  }
+}
+
+function renderPrintRoot() {
+  const root = $("#printRoot");
+  const n = planFills().fills.length;
+  root.innerHTML = n ? buildSheets(true).join("") : "";
+  const sheets = $$(".print-sheet", root);
+  // ensure proper page-break grouping
+  sheets.forEach((sh) => sh.style.pageBreakBefore = "");
+}
+
+function renderAll() {
+  renderPreview();
+  renderPrintRoot();
+  const hasData = state.rows.length > 0;
+  $("#printBtn").disabled = !hasData;
+  $("#printNote").textContent = hasData
+    ? "Choose 'Save as PDF' in the print dialog for a printable file."
+    : "No preview? Upload a CSV first.";
+}
+
+/* =====================================================================
+ *  Events & wiring
+ * ===================================================================== */
+function updateFileStatus(fileName, count) {
+  const s = $("#fileStatus");
+  s.hidden = false;
+  $("#fileStatusText").textContent = `✓ ${fileName} — ${count} pupils loaded`;
+  $("#mappingSection").hidden = false;
+  $("#uploadError").hidden = true;
+}
+
+function initEvents() {
+  const dropZone = $("#dropZone");
+  const fileInput = $("#csvFile");
+
+  $("#browseBtn").addEventListener("click", () => fileInput.click());
+  dropZone.addEventListener("click", (e) => {
+    if (e.target.id !== "browseBtn") fileInput.click();
+  });
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files[0];
+    if (f) readFile(f);
+    fileInput.value = "";
+  });
+
+  ["dragover", "dragenter"].forEach((ev) =>
+    dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add("dragover"); }));
+  ["dragleave", "drop"].forEach((ev) =>
+    dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove("dragover"); }));
+  dropZone.addEventListener("drop", (e) => {
+    const f = e.dataTransfer.files[0];
+    if (f) readFile(f);
+  });
+
+  $("#clearFileBtn").addEventListener("click", () => {
+    state.columns = []; state.rows = [];
+    state.mapping = {};
+    $("#fileStatus").hidden = true;
+    $("#mappingSection").hidden = true;
+    renderMapping();
+    renderAll();
+  });
+
+  $("#loadSampleBtn").addEventListener("click", () => {
+    handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
+  });
+
+  $("#printBtn").addEventListener("click", () => window.print());
+
+  state.columns = [];
+  ["optSchoolTop", "optClassName", "optSubject", "optYearGroup",
+   "optGuides", "optColor", "optSkipBlanks"].forEach((id) => {
+    const map = {
+      optSchoolTop: "showSchoolTop", optClassName: "showClassName",
+      optSubject: "showSubject", optYearGroup: "showYearGroup",
+      optGuides: "showGuides", optColor: "color", optSkipBlanks: "skipBlanks",
+    };
+    $(`#${id}`).checked = state.opts[map[id]];
+    $(`#${id}`).addEventListener("change", () => {
+      state.opts[map[id]] = $(`#${id}`).checked;
+      renderAll();
+    });
+  });
+
+  $("#layoutSelect").addEventListener("change", (e) => {
+    state.layout = e.target.value;
+    renderAll();
+  });
+
+  window.addEventListener("resize", () => { /* sheets are fixed-size, nothing to do */ });
+
+  /* optional logo upload (client-side only) */
+  const logoInput = document.createElement("input");
+  logoInput.type = "file";
+  logoInput.accept = "image/*";
+  logoInput.hidden = true;
+  document.body.appendChild(logoInput);
+  const addLogoRow = () => {
+    const s = document.querySelector("details.adv-details");
+    const row = document.createElement("div");
+    row.style.marginTop = "8px";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-ghost btn-sm";
+    btn.style.marginTop = "0";
+    btn.textContent = state.logoDataUrl ? "🖼️ Change logo…" : "🖼️ Add a logo…";
+    btn.addEventListener("click", () => logoInput.click());
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "btn-ghost btn-sm";
+    clear.style.marginTop = "0";
+    clear.textContent = "Remove";
+    clear.style.display = state.logoDataUrl ? "" : "none";
+    clear.addEventListener("click", () => {
+      state.logoDataUrl = null;
+      row.remove();
+      renderAll();
+      addLogoRow();
+    });
+    row.appendChild(btn);
+    row.appendChild(clear);
+    s.appendChild(row);
+  };
+  if (!SCHOOL_CONFIG.logo) addLogoRow();
+  logoInput.addEventListener("change", () => {
+    const f = logoInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.logoDataUrl = reader.result;
+      renderAll();
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function readFile(f) {
+  if (!/\.(csv|txt)$/i.test(f.name) && f.type !== "text/csv" && f.type !== "text/plain") {
+    showUploadError("Please choose a .csv file.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => handleCsvText(reader.result, f.name);
+  reader.onerror = () => showUploadError("Could not read that file.");
+  reader.readAsText(f);
+}
+
+/* =====================================================================
+ *  Sample CSV template used by the "Load sample" button.
+ *  Swap these out for real pupils — nothing is ever sent anywhere.
+ * ===================================================================== */
+const SAMPLE_CSV = [
+  "Pupil Name,Class/Form,Subject,Year Group",
+  "Aarav Patel,7A,Mathematics,Year 7",
+  "Mia Thompson,7A,Mathematics,Year 7",
+  "Oliver Smith,7B,English,Year 7",
+  "Isabella Rossi,7B,English,Year 7",
+  "Noah Williams,8A,Science,Year 8",
+  "Amelia Brown,8A,Science,Year 8",
+  "Leo Garcia,8B,History,Year 8",
+  "Sophia Jones,8B,History,Year 8",
+  "Lucas Miller,9A,Geography,Year 9",
+  "Ava Wilson,9A,Geography,Year 9",
+  "Ethan Davis,9B,Art,Year 9",
+  "Sofia Martin,9B,Art,Year 9",
+  "Mason Thomas,10A,French,Year 10",
+  "Grace Anderson,10A,French,Year 10",
+  "Jacob White,10B,Computing,Year 10",
+  "Lily Harris,10B,Computing,Year 10",
+].join("\n");
+
+/* =====================================================================
+ *  Init
+ * ===================================================================== */
+document.addEventListener("DOMContentLoaded", () => {
+  setupBranding();
+  renderTemplateList();
+  renderMapping();
+  renderAll();
+  initEvents();
+});

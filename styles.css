@@ -1,0 +1,256 @@
+/* ============================================================
+   LABEL MAKER FOR SCHOOLS — styles
+   ============================================================ */
+
+:root {
+  --primary: #1d4ed8;
+  --primary-dark: #1e40af;
+  --ink: #111827;
+  --muted: #6b7280;
+  --bg: #eef1f6;
+  --panel: #ffffff;
+  --border: #d7dde8;
+  --ok: #16a34a;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+/* ---------- Header ---------- */
+.app-header { background: #0b1b3a; color: #fff; }
+.header-inner {
+  max-width: 1500px; margin: 0 auto; padding: 14px 22px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-mark {
+  width: 48px; height: 48px; border-radius: 10px;
+  background: var(--primary); color: #fff; font-weight: 800; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; letter-spacing: 1px;
+}
+.brand-title { margin: 0; font-size: 22px; letter-spacing: .2px; }
+.brand-sub { margin: 2px 0 0; font-size: 13px; color: #c7d4f0; }
+.gdpr-badge {
+  display: flex; gap: 10px; align-items: center;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+  padding: 8px 14px; border-radius: 10px;
+}
+.gdpr-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,.25); flex: none; }
+.gdpr-badge strong { font-size: 13px; display: block; line-height: 1.2; }
+.gdpr-badge small { font-size: 11px; color: #c7d4f0; }
+
+/* ---------- Layout ---------- */
+.layout {
+  max-width: 1500px; margin: 22px auto; padding: 0 22px;
+  display: grid; grid-template-columns: 380px 1fr; gap: 22px; align-items: start;
+}
+@media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+}
+.panel-title { margin: 0 0 12px; font-size: 15px; color: var(--primary-dark); }
+.preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.preview-meta { font-size: 12px; color: var(--muted); }
+
+/* ---------- Upload ---------- */
+.upload-area {
+  border: 2px dashed var(--border); border-radius: 10px;
+  padding: 26px 14px; text-align: center; cursor: pointer;
+  background: #fbfcfe; transition: border-color .15s, background .15s;
+}
+.upload-area:hover, .upload-area.dragover { border-color: var(--primary); background: #f3f7ff; }
+.upload-icon { font-size: 30px; }
+.upload-main { margin: 8px 0 4px; font-size: 14px; }
+.upload-hint { margin: 0; font-size: 11.5px; color: var(--muted); }
+.upload-error { color: #b91c1c; font-size: 12px; margin: 10px 0 0; }
+.linklike { color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+.file-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 12px; padding: 8px 12px; border-radius: 8px;
+  background: #ecfdf5; border: 1px solid #bbf7d0; font-size: 13px;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  width: 100%; padding: 14px 18px; margin-top: 6px;
+  background: var(--primary); color: #fff; border: 0; border-radius: 10px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 2px 0 var(--primary-dark);
+  transition: filter .15s, transform .05s;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--primary-dark); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--primary-dark);
+  border-radius: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.btn-ghost:hover { background: #f3f7ff; }
+.btn-sm { margin-top: 10px; }
+
+/* ---------- Field mapping ---------- */
+.field-map { margin: 10px 0; }
+.field-map label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.field-map select, .control-row select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 8px; background: #fff; font-size: 13px; color: var(--ink);
+}
+.hint-text { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+
+.control-row { margin-top: 16px; }
+.control-row label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+/* ---------- Checklist ---------- */
+.adv-details {
+  margin-top: 14px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+}
+.adv-details summary { cursor: pointer; font-size: 13px; color: var(--primary-dark); font-weight: 600; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 8px 0; cursor: pointer; }
+.check input { accent-color: var(--primary); }
+
+/* ---------- Template list ---------- */
+.template-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.template-card {
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 10px;
+  cursor: pointer; background: #fff; text-align: left;
+  transition: border-color .12s, box-shadow .12s;
+}
+.template-card:hover { border-color: var(--primary); }
+.template-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,78,216,.15); background: #f7faff; }
+.template-card .t-code { font-weight: 800; font-size: 14px; color: var(--primary-dark); }
+.template-card .t-size { font-size: 12px; color: var(--ink); }
+.template-card .t-note { font-size: 11px; color: var(--muted); }
+
+/* ---------- About block ---------- */
+.about-block {
+  margin-top: 16px; padding: 12px 14px; background: #f7f9fc;
+  border: 1px solid var(--border); border-radius: 10px; font-size: 12.5px;
+}
+.about-block h3 { margin: 0 0 6px; font-size: 13px; }
+.about-block ul { margin: 0; padding-left: 16px; }
+.about-block li { margin: 3px 0; }
+
+.print-note { font-size: 12px; color: var(--muted); text-align: center; margin: 10px 0 0; }
+
+/* ---------- Preview scroll area ---------- */
+.sheet-scroll {
+  margin-top: 12px; overflow-x: auto; max-height: calc(100vh - 240px); overflow-y: auto;
+  background: repeating-linear-gradient(45deg,#f0f2f7,#f0f2f7 10px,#e9edf4 10px,#e9edf4 20px);
+  border-radius: 10px; padding: 18px;
+}
+
+/* ------------------------------------------------------------
+   ON-SCREEN A4 SHEET (live preview)
+   ------------------------------------------------------------ */
+.sheet {
+  width: 210mm; height: 297mm;
+  background: #fff; margin: 0 auto 22px; position: relative;
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+  page-break-after: always;
+}
+.sheet-pad { position: absolute; inset: 0; }
+
+/* Label cells positioned in millimetres (driven by JS inline styles) */
+.label-cell {
+  position: absolute; overflow: hidden;
+}
+
+/* Guide outlines (dashed) — hidden when toggled off / when printing clean */
+.label-cell.guides::after {
+  content: ""; position: absolute; inset: 0;
+  border: 0.35mm dashed #d3382c; border-radius: var(--r, 1.6mm); pointer-events: none;
+}
+.sheet.no-guides .label-cell.guides::after { display: none; }
+
+/* Label interior */
+.label-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-radius: var(--r, 1.6mm);
+}
+/* colour = single accent band = true, else text-only */
+.label-inner.color {
+  background: var(--label-bg, #ffffff);
+}
+
+.label-school {
+  flex: none; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+  text-align: center; white-space: nowrap; overflow: hidden;
+  font-size: var(--school-fs, 3mm); padding: 4% 6% 0;
+}
+.label-school.bar {
+  color: var(--bar-text, #fff); background: var(--bar-bg, transparent);
+  font-size: var(--school-fs, 3mm); padding: 2.5% 6%;
+  display: flex; align-items: center; justify-content: center; gap: 3%;
+}
+.lbl-logo { height: calc(var(--school-fs, 3mm) * 1.5); width: auto; max-width: 22%; object-fit: contain; }
+.lbl-school-text { overflow: hidden; text-overflow: ellipsis; }
+.label-name {
+  flex: 1 1 auto; font-weight: 800; line-height: 1.15;
+  font-size: var(--name-fs, 5mm);
+  display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden;
+  padding: 0 6%;
+}
+.label-subject {
+  flex: none; text-align: center; font-weight: 600; padding: 0 10% 4%;
+  font-size: var(--subj-fs, 3mm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.label-meta {
+  flex: none; display: flex; justify-content: center; gap: 6%; padding: 0 8% 3%;
+  font-size: var(--meta-fs, 2.5mm); text-align: center;
+}
+.label-meta span { font-weight: 600; white-space: nowrap; overflow: hidden; }
+
+/* Different arrangement modes */
+.label-inner.badge .label-name { align-items: center; padding-bottom: 2%; }
+.label-inner.badge .label-subject {
+  background: var(--accent-soft, #e2e8f0); border-radius: 99px; margin: 0 8% 4%;
+  padding: 1.5% 4%;
+}
+.label-inner.minimal .label-school { display: none; }
+.label-inner.minimal .label-meta { display: none; }
+.app-footer {
+  max-width: 1500px; margin: 0 auto; padding: 10px 22px 26px;
+  font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap;
+}
+.footer-sep { color: var(--border); }
+
+/* ============================================================
+   PRINT — exact A4 at 100%. Hide the whole UI.
+   ============================================================ */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media screen {
+  #printRoot { display: none; }
+}
+
+@media print {
+  body { background: #fff; }
+  .app-header, .layout .controls-panel, .preview-panel, .app-footer,
+  .sheet-scroll { display: none !important; }
+
+  #printRoot { display: block; }
+
+  .sheet.print-sheet {
+    width: 210mm; height: 297mm; margin: 0; box-shadow: none;
+    page-break-after: always; break-after: page; position: relative;
+  }
+  .sheet.print-sheet:last-child { page-break-after: auto; break-after: auto; }
+
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}

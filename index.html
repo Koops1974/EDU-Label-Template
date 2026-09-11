@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avery Label Maker for Schools</title>
+<meta name="description" content="Free, GDPR-friendly Avery label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark" id="brandMark">MY</span>
+      <div class="brand-text">
+        <h1 id="headerSchool" class="brand-title">Avery Label Maker</h1>
+        <p class="brand-sub">Name &amp; subject stickers for workbooks</p>
+      </div>
+    </div>
+    <div class="gdpr-badge" id="gdprBadge">
+      <span class="gdpr-dot"></span>
+      <div>
+        <strong>100% on-device</strong>
+        <small>No data ever leaves this computer</small>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ================= SIDEBAR / CONTROLS ================= -->
+  <section class="panel controls-panel" aria-labelledby="controlsTitle">
+    <h2 id="controlsTitle" class="panel-title">Step 1 · Add pupils</h2>
+
+    <!-- CSV upload -->
+    <div class="upload-area" id="dropZone">
+      <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
+      <div class="upload-icon">📄</div>
+      <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
+      <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
+      <p class="upload-error" id="uploadError" hidden></p>
+    </div>
+
+    <button class="btn-ghost btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
+
+    <!-- File status -->
+    <div id="fileStatus" class="file-status" hidden>
+      <span id="fileStatusText"></span>
+      <button class="btn-ghost btn-sm" id="clearFileBtn" type="button">Remove</button>
+    </div>
+
+    <!-- Field mapping -->
+    <div id="mappingSection" hidden>
+      <h2 class="panel-title">Step 2 · Map your columns</h2>
+      <p class="hint-text">Tell the tool which column is which. Any field can be hidden.</p>
+
+      <div class="field-map" id="mappingRowName"></div>
+      <div class="field-map" id="mappingRowClass"></div>
+      <div class="field-map" id="mappingRowSubject"></div>
+      <div class="field-map" id="mappingRowYear"></div>
+      <div class="field-map" id="mappingRowSchool"></div>
+
+      <details class="adv-details">
+        <summary>Show/hide fields on the label</summary>
+        <label class="check"><input type="checkbox" id="optSchoolTop" checked><span>School name strip on label</span></label>
+        <label class="check"><input type="checkbox" id="optClassName" checked><span>Class / form</span></label>
+        <label class="check"><input type="checkbox" id="optSubject" checked><span>Subject</span></label>
+        <label class="check"><input type="checkbox" id="optYearGroup" checked><span>Year group</span></label>
+      </details>
+    </div>
+
+    <!-- Template selection -->
+    <h2 class="panel-title">Step 3 · Choose label sheet</h2>
+    <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
+
+    <!-- Word order / layout -->
+    <div class="control-row">
+      <label for="layoutSelect">Label layout</label>
+      <select id="layoutSelect">
+        <option value="classic" selected>School / name / subject</option>
+        <option value="badge">Badge style</option>
+        <option value="minimal">Minimal sticker</option>
+      </select>
+    </div>
+
+    <details class="adv-details">
+      <summary>Printing options</summary>
+      <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
+      <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
+      <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
+      <p class="hint-text">Turn the guides off for the final run. Print at <strong>100% / Actual size</strong>, margins <strong>None</strong>, background graphics <strong>On</strong>.</p>
+    </details>
+
+    <!-- Share/submission note (optional) -->
+    <div class="about-block">
+      <h3>About this tool</h3>
+      <ul>
+        <li>Free to use &amp; share between schools</li>
+        <li>GDPR-friendly — everything runs in your browser</li>
+        <li>Works offline once opened</li>
+      </ul>
+    </div>
+
+    <button class="btn-primary" id="printBtn">🖨️ Print / Save as PDF</button>
+    <p class="print-note" id="printNote">No preview? Upload a CSV first.</p>
+  </section>
+
+  <!-- ================= PREVIEW ================= -->
+  <section class="panel preview-panel" aria-labelledby="previewTitle">
+    <div class="preview-head">
+      <h2 id="previewTitle" class="panel-title">Preview</h2>
+      <span class="preview-meta" id="previewMeta">Waiting for a CSV…</span>
+    </div>
+    <div id="sheetContainer" class="sheet-scroll"></div>
+  </section>
+
+</main>
+
+<footer class="app-footer">
+  <span id="footerText">Label Maker for Schools — free, open source, GDPR-friendly</span>
+  <span class="footer-sep">·</span>
+  <span>© <span id="footerYear"></span></span>
+</footer>
+
+<!-- ================= PRINT SHEETS (hidden on screen) ================= -->
+<div id="printRoot" aria-hidden="true"></div>
+
+<script src="lib/papaparse.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
