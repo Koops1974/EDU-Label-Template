@@ -104,14 +104,6 @@ body {
 a.btn-ghost { text-decoration: none; text-align: center; }
 .download-link { margin-top: 10px; }
 
-.download-block { margin-top: 14px; }
-a.btn-primary.download-link {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; text-decoration: none; margin-top: 0; padding: 12px 16px;
-}
-.download-block .hint-text { margin-top: 8px; }
-.sample-row { margin-top: 10px; }
-
 /* ---------- Field mapping ---------- */
 .field-map { margin: 10px 0; }
 .field-map label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
