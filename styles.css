@@ -124,6 +124,29 @@ a.btn-ghost { text-decoration: none; text-align: center; }
 .check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 8px 0; cursor: pointer; }
 .check input { accent-color: var(--primary); }
 
+/* ---------- Print-offset calibration (Printing options) ---------- */
+.cal-box {
+  margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px;
+}
+.cal-title { font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 4px; }
+.cal-row { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; }
+.cal-row label { font-size: 12px; color: var(--muted); width: 64px; flex: 0 0 auto; }
+.cal-row input {
+  width: 90px; padding: 5px 8px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px;
+}
+.cal-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+/* Calibration test sheet — mm ruler down the left edge & along the top */
+.cal-tick { position: absolute; left: 0; width: 6mm; background: rgba(17,17,17,.55); }
+.cal-num { position: absolute; left: 7mm; font-size: 7px; line-height: 5mm; color: #666; }
+.cal-hick { position: absolute; top: 0; background: rgba(17,17,17,.7); width: 0.4mm; height: 4mm; }
+.cal-hick.big { height: 5.5mm; }
+.cal-head {
+  position: absolute; top: 8mm; left: 30mm; z-index: 0;
+  font-size: 10px; color: #888;
+}
+
 /* ---------- Template list ---------- */
 .template-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
 .template-card {

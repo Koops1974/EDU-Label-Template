@@ -59,11 +59,23 @@ const AVERY_TEMPLATES = {
 
 const PAGE_W = 210, PAGE_H = 297; // A4 portrait
 
-/* Printer/browser offset compensation (mm). See config.js — printCalibration. */
-const CAL = () => (SCHOOL_CONFIG.printCalibration ? {
-  x: Number(SCHOOL_CONFIG.printCalibration.x) || 0,
-  y: Number(SCHOOL_CONFIG.printCalibration.y) || 0,
-} : { x: 0, y: 0 });
+/* Printer/browser offset compensation (mm).
+ * Base value comes from config.js (printCalibration). Any values entered
+ * in the "Printing options" panel are layered on top and remembered for
+ * this browser (localStorage), so a school doesn't need to edit config.js. */
+const CAL_KEY = "labelMakerCalibration";
+const readStoredCal = () => {
+  try { return JSON.parse(localStorage.getItem(CAL_KEY) || "null"); }
+  catch (e) { return null; }
+};
+const CAL = () => {
+  const base = SCHOOL_CONFIG.printCalibration ? {
+    x: Number(SCHOOL_CONFIG.printCalibration.x) || 0,
+    y: Number(SCHOOL_CONFIG.printCalibration.y) || 0,
+  } : { x: 0, y: 0 };
+  const extra = readStoredCal();
+  return extra ? { x: base.x + (Number(extra.x) || 0), y: base.y + (Number(extra.y) || 0) } : base;
+};
 const calLeft = (v) => v + CAL().x;
 const calTop = (v) => v + CAL().y;
 
@@ -495,6 +507,46 @@ function renderPrintRoot() {
   sheets.forEach((sh) => sh.style.pageBreakBefore = "");
 }
 
+/* =====================================================================
+ *  Calibration test sheet
+ *  Prints just the label guide outlines plus a millimetre ruler down the
+ *  left edge and along the top. The visible gap between the printed "0"
+ *  marks and the physical sheet edge IS the offset to cancel out.
+ * ===================================================================== */
+function calibrationSheetHtml() {
+  const t = AVERY_TEMPLATES[state.template];
+  let cells = "";
+  for (let i = 0; i < t.cols * t.rows; i++) {
+    const col = i % t.cols, rowI = Math.floor(i / t.cols);
+    const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowI * t.pitchY);
+    cells +=
+      `<div class="label-cell guides" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+      `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;"></div>`;
+  }
+  const ticks = [];
+  for (let y = 0; y <= 290; y += 10) {
+    const h = (y % 50 === 0) ? 5 : 3;
+    ticks.push(`<div class="cal-tick" style="top:${y}mm;height:${h}mm"></div>`);
+    ticks.push(`<div class="cal-num" style="top:${y}mm">${y}</div>`);
+  }
+  const hticks = [];
+  for (let x = 0; x <= 210; x += 10) {
+    hticks.push(`<div class="cal-hick${x % 50 === 0 ? " big" : ""}" style="left:${x}mm"></div>`);
+  }
+  return `<div class="sheet print-sheet">` +
+    `<div class="cal-head" style="left:30mm">A4 top edge → mm<br>Measure the gap around the dashed boxes after printing</div>` +
+    `<div class="sheet-pad">${ticks.join("")}${hticks.join("")}${cells}</div></div>`;
+}
+
+function printCalibrationSheet() {
+  const root = $("#printRoot");
+  const prev = root.innerHTML;
+  root.innerHTML = calibrationSheetHtml();
+  window.print();
+  root.innerHTML = prev;
+  renderPreview();
+}
+
 function renderAll() {
   renderPreview();
   renderPrintRoot();
@@ -571,6 +623,39 @@ function initEvents() {
 
   $("#layoutSelect").addEventListener("change", (e) => {
     state.layout = e.target.value;
+    renderAll();
+  });
+
+  /* Print-offset calibration (mm, saved per-browser). Negative y moves
+   * everything UP, negative x moves LEFT — same convention as config.js. */
+  const stored = readStoredCal() || { x: 0, y: 0 };
+  const calX = $("#calX"), calY = $("#calY");
+  calX.value = stored.x;
+  calY.value = stored.y;
+  const updateCalReadout = () => {
+    $("#calXVal").textContent = (parseFloat(calX.value) || 0);
+    $("#calYVal").textContent = (parseFloat(calY.value) || 0);
+  };
+  const calSaveToStorage = () => {
+    const v = {
+      x: Math.round((parseFloat(calX.value) || 0) * 10) / 10,
+      y: Math.round((parseFloat(calY.value) || 0) * 10) / 10,
+    };
+    try { localStorage.setItem(CAL_KEY, JSON.stringify(v)); } catch (e) { /* private mode */ }
+    updateCalReadout();
+  };
+  updateCalReadout();
+  calX.addEventListener("change", () => { calSaveToStorage(); renderAll(); });
+  calY.addEventListener("change", () => { calSaveToStorage(); renderAll(); });
+  $("#calApply").addEventListener("click", () => {
+    calSaveToStorage();
+    renderAll();
+  });
+  $("#calTest").addEventListener("click", printCalibrationSheet);
+  $("#calReset").addEventListener("click", () => {
+    calX.value = 0; calY.value = 0;
+    try { localStorage.removeItem(CAL_KEY); } catch (e) { /* private mode */ }
+    updateCalReadout();
     renderAll();
   });
 

@@ -17,6 +17,11 @@ global.document = {
   body: { appendChild() {} },
 };
 global.CSS = { escape: (s) => s };
+global.localStorage = {
+  _s: {}, getItem(k) { return this._s[k] || null; },
+  setItem(k, v) { this._s[k] = String(v); },
+  removeItem(k) { delete this._s[k]; },
+};
 global.Papa = {
   parse: () => ({
     data: [],
@@ -37,7 +42,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, calibrationSheetHtml, CAL };"
   );
 eval(appSrc);
 
@@ -104,5 +109,13 @@ state.layout = "badge";
 const badgeSheet = __app.buildSheets(false)[0];
 check(badgeSheet.includes('label-inner badge'), "badge layout class applied: " + badgeSheet.slice(100, 500).replace(/\n/g, ""));
 
-console.log("\nResult: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
+console.log("Calibration test sheet:");
+const cal = __app.calibrationSheetHtml();
+check((cal.match(/class="cal-tick"/g) || []).length === 30, "left ruler has 30 ticks (0..290mm)");
+check((cal.match(/class="cal-num"/g) || []).length === 30, "ruler has 30 mm numbers");
+check((cal.match(/class="cal-hick/g) || []).length === 22, "top ruler has 22 ticks (0..210mm)");
+check((cal.match(/class="label-cell guides"/g) || []).length === 21, "21 dashed guide boxes on L7160");
+check(cal.includes("left:7.48mm;top:15.49mm"), "first guide sits at L7160 origin (7.48, 15.49)");
+check(cal.includes("cal-head"), "test-sheet explainer text present");
+console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

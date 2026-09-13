@@ -95,6 +95,24 @@
       <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
       <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
       <p class="hint-text">Turn the guides off for the final run. Print at <strong>100% / Actual size</strong>, margins <strong>None</strong>, background graphics <strong>On</strong>.</p>
+
+      <div class="cal-box" id="calBox">
+        <p class="cal-title">🤏 Labels not lining up? (print offset)</p>
+        <p class="hint-text">Some printers silently add a top/side margin. Print the test sheet once, measure the gap around the dashed boxes, then enter the millimetres here (negative = moves up/left). Saved on this device only.</p>
+        <div class="cal-row">
+          <label>Left↔<span id="calXVal">0</span>mm</label>
+          <input type="number" id="calX" step="0.5" min="-25" max="25"> 
+        </div>
+        <div class="cal-row">
+          <label>Top↕<span id="calYVal">0</span>mm</label>
+          <input type="number" id="calY" step="0.5" min="-25" max="25">
+        </div>
+        <div class="cal-btns">
+          <button type="button" class="btn-ghost btn-sm" id="calTest">🖨️ Print test sheet</button>
+          <button type="button" class="btn-ghost btn-sm" id="calApply">Apply &amp; preview</button>
+          <button type="button" class="btn-ghost btn-sm" id="calReset">Reset</button>
+        </div>
+      </div>
     </details>
 
     <!-- How it works -->
