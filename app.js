@@ -540,11 +540,23 @@ function calibrationSheetHtml() {
 
 function printCalibrationSheet() {
   const root = $("#printRoot");
-  const prev = root.innerHTML;
+  if (!root) return;
+  const t = AVERY_TEMPLATES[state.template];
+  const c = CAL();
   root.innerHTML = calibrationSheetHtml();
+  const stamp = root.querySelector(".cal-head");
+  if (stamp) stamp.textContent =
+    `ALIGNMENT TEST · offset X ${c.x >= 0 ? "+" : ""}${c.x} mm, Y ${c.y >= 0 ? "+" : ""}${c.y} mm · ` + t.code +
+    " — the printed gap around the dashed boxes (use the mm ruler) is what to enter with the opposite sign";
+  const restore = () => {
+    root.innerHTML = "";
+    window.removeEventListener("afterprint", restore);
+    clearTimeout(restoreTimer);
+    renderAll();
+  };
+  const restoreTimer = setTimeout(restore, 60000); /* safety if afterprint never fires */
+  window.addEventListener("afterprint", restore);
   window.print();
-  root.innerHTML = prev;
-  renderPreview();
 }
 
 function renderAll() {
@@ -647,16 +659,34 @@ function initEvents() {
   updateCalReadout();
   calX.addEventListener("change", () => { calSaveToStorage(); renderAll(); });
   calY.addEventListener("change", () => { calSaveToStorage(); renderAll(); });
+  const calStatus = $("#calStatus");
+  const showCalStatus = (msg) => {
+    calStatus.textContent = msg;
+    calStatus.style.opacity = "1";
+  };
   $("#calApply").addEventListener("click", () => {
     calSaveToStorage();
     renderAll();
+    const c = CAL();
+    showCalStatus(`✔ Saved on this device — preview shifted X ${c.x >= 0 ? "+" : ""}${c.x} mm, Y ${c.y >= 0 ? "+" : ""}${c.y} mm (look at the dashed boxes on the right).`);
+    clearTimeout(calStatus._t);
+    calStatus._t = setTimeout(() => { calStatus.style.opacity = "0"; }, 6000);
   });
-  $("#calTest").addEventListener("click", printCalibrationSheet);
+  $("#calTest").addEventListener("click", () => {
+    const c = CAL();
+    showCalStatus("Printing the alignment test sheet — if the print dialog didn't open, your browser blocked printing.");
+    clearTimeout(calStatus._t);
+    calStatus._t = setTimeout(() => { calStatus.style.opacity = "0"; }, 8000);
+    printCalibrationSheet();
+  });
   $("#calReset").addEventListener("click", () => {
     calX.value = 0; calY.value = 0;
     try { localStorage.removeItem(CAL_KEY); } catch (e) { /* private mode */ }
     updateCalReadout();
     renderAll();
+    showCalStatus("Calibration reset to 0,0.");
+    clearTimeout(calStatus._t);
+    calStatus._t = setTimeout(() => { calStatus.style.opacity = "0"; }, 4000);
   });
 
   window.addEventListener("resize", () => { /* sheets are fixed-size, nothing to do */ });
