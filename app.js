@@ -59,6 +59,14 @@ const AVERY_TEMPLATES = {
 
 const PAGE_W = 210, PAGE_H = 297; // A4 portrait
 
+/* Printer/browser offset compensation (mm). See config.js — printCalibration. */
+const CAL = () => (SCHOOL_CONFIG.printCalibration ? {
+  x: Number(SCHOOL_CONFIG.printCalibration.x) || 0,
+  y: Number(SCHOOL_CONFIG.printCalibration.y) || 0,
+} : { x: 0, y: 0 });
+const calLeft = (v) => v + CAL().x;
+const calTop = (v) => v + CAL().y;
+
 /* =====================================================================
  *  App state
  * ===================================================================== */
@@ -370,8 +378,8 @@ function labelContentHtml(row) {
 function buildLabelCell(row, t, cellIndex) {
   const col = cellIndex % t.cols;
   const rowIdx = Math.floor(cellIndex / t.cols);
-  const left = t.originX + col * t.pitchX;
-  const top = t.originY + rowIdx * t.pitchY;
+  const left = calLeft(t.originX + col * t.pitchX);
+  const top = calTop(t.originY + rowIdx * t.pitchY);
 
   const C = SCHOOL_CONFIG;
   const { namePart, subjectPart, metaPart, parts } = labelContentHtml(row);
@@ -425,7 +433,7 @@ function emptySheetHtml() {
   let cells = "";
   for (let i = 0; i < t.cols * t.rows; i++) {
     const col = i % t.cols, rowI = Math.floor(i / t.cols);
-    const left = t.originX + col * t.pitchX, top = t.originY + rowI * t.pitchY;
+    const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowI * t.pitchY);
     const guides = state.opts.showGuides ? " guides" : "";
     cells +=
       `<div class="label-cell${guides}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
@@ -452,8 +460,8 @@ function buildSheets(printMode) {
         const col = i % t.cols, rowI = Math.floor(i / t.cols);
         const guides = state.opts.showGuides ? " guides" : "";
         cells +=
-          `<div class="label-cell${guides}" style="left:${(t.originX + col * t.pitchX).toFixed(2)}mm;` +
-          `top:${(t.originY + rowI * t.pitchY).toFixed(2)}mm;` +
+          `<div class="label-cell${guides}" style="left:${calLeft(t.originX + col * t.pitchX).toFixed(2)}mm;` +
+        `top:${calTop(t.originY + rowI * t.pitchY).toFixed(2)}mm;` +
           `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;"></div>`;
       }
     }

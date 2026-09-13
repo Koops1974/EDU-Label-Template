@@ -45,8 +45,18 @@ const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
    *  3. DEFAULT LABEL LAYOUT / PRINTER DEFAULTS
    * ---------------------------------------------------------------- */
-  defaultTemplate: "L7160",              // Default Avery code: L7160, L7163, J8160,
-                                         // L4780 or L7169
+  defaultTemplate: "L7160",              // Default Avery code: L7160, L7161, L7162,
+                                         // L7163, L7171 or L4780
+
+  /* PRINT CALIBRATION (millimetres).
+   * Every sheet is positioned to the exact Avery geometry, but some
+   * printers / browsers quietly add their own top and side margins.
+   * Test on plain paper first: measure how far the dashed boxes sit
+   * from the right position on the real sheet, then enter the offset
+   * here. Negative y moves everything UP, negative x moves LEFT.
+   * Leave as 0,0 if the test print lines up. */
+  printCalibration: { x: 0, y: 0 },
+
   defaultFont: "Arial, Helvetica, sans-serif",
   defaultTextColor: "#111827",
 
