@@ -282,10 +282,14 @@ a.btn-ghost { text-decoration: none; text-align: center; }
   .app-header, .layout .controls-panel, .preview-panel, .app-footer,
   .sheet-scroll { display: none !important; }
 
+  /* Hide every body child except #printRoot — prevents Chrome/Edge adding
+     a blank trailing page (the in-flow siblings create a pagination break). */
+  body > :not(#printRoot) { display: none !important; }
+
   #printRoot { display: block; }
 
   .sheet.print-sheet {
-    width: 210mm; height: 297mm; margin: 0; box-shadow: none;
+    width: 210mm; height: 296.8mm; margin: 0; box-shadow: none;
     page-break-after: always; break-after: page; position: relative;
   }
   .sheet.print-sheet:last-child { page-break-after: auto; break-after: auto; }
