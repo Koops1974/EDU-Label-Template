@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Avery Label Maker for Schools</title>
-<meta name="description" content="Free, GDPR-friendly Avery label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=3">
+<title>Label Maker for Schools</title>
+<meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
+<link rel="stylesheet" href="styles.css?v=4">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
 </head>
 <body>
@@ -18,7 +18,7 @@
            onerror="this.style.display='none';">
       <span class="brand-mark" id="brandMark" style="display:flex;">ALM</span>
       <div class="brand-text">
-        <h1 id="headerSchool" class="brand-title">Avery Label Maker for Schools</h1>
+        <h1 id="headerSchool" class="brand-title">Label Maker for Schools</h1>
         <p class="brand-sub">Name &amp; subject stickers for workbooks</p>
       </div>
     </div>
@@ -41,7 +41,7 @@
   <section class="panel controls-panel" aria-labelledby="controlsTitle">
     <div class="card-head">
       <h2 id="controlsTitle" class="card-title">Label maker</h2>
-      <p class="card-sub">Four steps to printable Avery sheets.</p>
+      <p class="card-sub">Four steps to printable label sheets.</p>
     </div>
 
     <!-- Step 1 · Add pupils -->
@@ -180,7 +180,7 @@
       <ol class="how-list">
         <li><strong>Download the CSV template</strong> (above) and add your pupils' names, classes and subjects.</li>
         <li><strong>Drop the file here</strong> — your columns are mapped for you automatically.</li>
-        <li><strong>Pick your Avery sheet, preview,</strong> then print at 100% scale (or save as PDF).</li>
+        <li><strong>Pick your label sheet, preview,</strong> then print at 100% scale (or save as PDF).</li>
       </ol>
     </div>
 
@@ -218,9 +218,9 @@
 <!-- ================= PRINT SHEETS (hidden on screen) ================= -->
 <div id="printRoot" aria-hidden="true"></div>
 
-<script src="lib/papaparse.min.js?v=3"></script>
-<script src="config.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="lib/papaparse.min.js?v=4"></script>
+<script src="config.js?v=4"></script>
+<script src="app.js?v=4"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

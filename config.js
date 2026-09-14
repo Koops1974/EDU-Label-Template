@@ -11,7 +11,7 @@ const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
    *  1. TOOL TITLE & SCHOOL BRANDING
    * ---------------------------------------------------------------- */
-  appTitle: "Avery Label Maker for Schools", // Shown in the page header / tab title
+  appTitle: "Label Maker for Schools", // Shown in the page header / tab title
   schoolName: "My School Name",          // Full school name printed on each label
   shortName: "My School",                // Used where there is less space
   logoText: "ALM",                       // 2-4 letter monogram shown if no logo image is set
@@ -45,11 +45,11 @@ const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
    *  3. DEFAULT LABEL LAYOUT / PRINTER DEFAULTS
    * ---------------------------------------------------------------- */
-  defaultTemplate: "L7160",              // Default Avery code: L7160, L7161, L7162,
+  defaultTemplate: "L7160",              // Default code: L7160, L7161, L7162,
                                          // L7163, L7171 or L4780
 
   /* PRINT CALIBRATION (millimetres).
-   * Every sheet is positioned to the exact Avery geometry, but some
+   * Every sheet is positioned to the exact label-sheet geometry, but some
    * printers / browsers quietly add their own top and side margins.
    * Test on plain paper first: measure how far the dashed boxes sit
    * from the right position on the real sheet, then enter the offset

@@ -1,15 +1,15 @@
-# 🏷️ Avery Label Maker for Schools
+# 🏷️ Label Maker for Schools
 
-A free, open-source, **GDPR-friendly** web tool that turns a simple pupil CSV into ready-to-print Avery label sheets — perfect for name &amp; subject stickers on workbooks.
+A free, open-source, **GDPR-friendly** web tool that turns a simple pupil CSV into ready-to-print label sheets — perfect for name &amp; subject stickers on workbooks.
 
-Everything runs **in your browser**. Upload a CSV, choose your Avery sheet, click **Print / Save as PDF**.
+Everything runs **in your browser**. Upload a CSV, choose your label sheet, click **Print / Save as PDF**.
 
 ---
 
 ## ✨ Features
 
 - **Upload a CSV** (drag & drop or browse) — names, class, subject, year group, school
-- **5 popular Avery templates**: L7160, L7163, J8160, L4780, L7169
+- **5 popular label templates**: L7160, L7163, J8160, L4780, L7169
 - **Accurate millimetre geometry** — label origins + pitch from the open glabels data set, printed at 100%
 - **Preview on screen**, then **Print / Save as PDF** straight from the browser
 - **Customisable schooling branding** via a single config file (logo, colours, school name)
@@ -54,7 +54,7 @@ Edit **`config.js`** — the single file that controls branding:
 | `logo` | Optional logo: `"assets/school-logo.png"` placed in the repo, or leave `""` and upload per-session from the page |
 | `primaryColor` / `printTextColor` / `accentColor` | Brand colours used for the label accent bar |
 | `label.*` | Which fields show on labels (school strip, class, subject, year, prefixes) |
-| `defaultTemplate` | Which Avery sheet is selected by default |
+| `defaultTemplate` | Which label sheet is selected by default |
 | `columnAliases` | Column headers to auto-detect in uploaded CSVs |
 
 All colours, fonts and layout tools live in `styles.css` if you want deeper redesign.
@@ -119,7 +119,7 @@ This tool is designed to be safe for pupil data:
 
 ---
 
-## ✔️ Avery template geometry (A4, verified)
+## ✔️ Label sheet geometry (A4, verified)
 
 | Code | Grid | Labels/sheet | Label size | Notes |
 |---|---|---|---|---|
