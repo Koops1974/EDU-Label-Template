@@ -13,7 +13,10 @@
 <header class="app-header">
   <div class="header-inner">
     <div class="brand">
-      <span class="brand-mark" id="brandMark">ALM</span>
+      <img class="brand-logo" id="brandLogo" src="assets/EDU-logo.jpg" alt="EDU logo"
+           onload="this.style.display='flex';document.getElementById('brandMark').style.display='none';"
+           onerror="this.style.display='none';">
+      <span class="brand-mark" id="brandMark" style="display:flex;">ALM</span>
       <div class="brand-text">
         <h1 id="headerSchool" class="brand-title">Avery Label Maker for Schools</h1>
         <p class="brand-sub">Name &amp; subject stickers for workbooks</p>
