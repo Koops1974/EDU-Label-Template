@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker for Schools</title>
 <meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
 </head>
 <body>
@@ -152,6 +152,14 @@
       <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
       <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
       <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
+
+      <div class="colour-row">
+        <label for="labelBarColor">School strip colour</label>
+        <input type="color" id="labelBarColor" value="#1d4ed8" aria-label="School strip colour">
+        <button type="button" class="btn-ghost btn-sm" id="labelBarReset">Reset to default</button>
+        <span class="hint-inline">Colour of the school-name bar on each printed label</span>
+      </div>
+
       <p class="hint-text">Turn the guides off for the final run. Print at <strong>100% / Actual size</strong>, margins <strong>None</strong>, background graphics <strong>On</strong>.</p>
 
       <div class="cal-box" id="calBox">
@@ -218,9 +226,9 @@
 <!-- ================= PRINT SHEETS (hidden on screen) ================= -->
 <div id="printRoot" aria-hidden="true"></div>
 
-<script src="lib/papaparse.min.js?v=4"></script>
-<script src="config.js?v=4"></script>
-<script src="app.js?v=4"></script>
+<script src="lib/papaparse.min.js?v=5"></script>
+<script src="config.js?v=5"></script>
+<script src="app.js?v=5"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

@@ -79,6 +79,17 @@ const CAL = () => {
 const calLeft = (v) => v + CAL().x;
 const calTop = (v) => v + CAL().y;
 
+/* School-name strip colour — surfaced as a picker in the printing options.
+ * Layered over config.js primaryColor and remembered for this browser. */
+const COLOR_KEY = "labelMakerBarColor";
+const readStoredColor = () => {
+  try {
+    const v = localStorage.getItem(COLOR_KEY);
+    return v && /^#[0-9a-fA-F]{6}$/.test(v) ? v.toLowerCase() : null;
+  } catch (e) { return null; }
+};
+const effectiveBarColor = () => readStoredColor() || SCHOOL_CONFIG.primaryColor;
+
 /* =====================================================================
  *  App state
  * ===================================================================== */
@@ -362,7 +373,7 @@ function labelContentHtml(row) {
       : "";
     parts.push(
       `<div class="label-school${useColor ? " bar" : ""}" ` +
-      `style="--bar-bg:${C.primaryColor};--bar-text:${C.printTextColor};">
+      `style="--bar-bg:${effectiveBarColor()};--bar-text:${C.printTextColor};">
          ${logoHtml}<span class="lbl-school-text">${text}</span>
        </div>`
     );
@@ -413,7 +424,7 @@ function buildLabelCell(row, t, cellIndex) {
     `--meta-fs:${(2.5 * fs).toFixed(2)}mm;` +
     `--r:${t.radius}mm;` +
     `--accent-soft:${accentSoft};` +
-    `--bar-bg:${C.primaryColor};` +
+    `--bar-bg:${effectiveBarColor()};` +
     `--bar-text:${C.printTextColor};` +
     `--label-bg:#fff;`;
 
@@ -688,6 +699,25 @@ function initEvents() {
     clearTimeout(calStatus._t);
     calStatus._t = setTimeout(() => { calStatus.style.opacity = "0"; }, 4000);
   });
+
+  /* school-name strip colour picker (saved per-browser) */
+  const barColorInput = $("#labelBarColor");
+  if (barColorInput) {
+    barColorInput.value = readStoredColor() || SCHOOL_CONFIG.primaryColor;
+    barColorInput.addEventListener("input", () => {
+      if (!/^#[0-9a-fA-F]{6}$/.test(barColorInput.value)) return;
+      try { localStorage.setItem(COLOR_KEY, barColorInput.value); } catch (e) { /* private mode */ }
+      renderAll();
+    });
+    const barColorReset = $("#labelBarReset");
+    if (barColorReset) {
+      barColorReset.addEventListener("click", () => {
+        try { localStorage.removeItem(COLOR_KEY); } catch (e) { /* private mode */ }
+        barColorInput.value = SCHOOL_CONFIG.primaryColor;
+        renderAll();
+      });
+    }
+  }
 
   window.addEventListener("resize", () => { /* sheets are fixed-size, nothing to do */ });
 
