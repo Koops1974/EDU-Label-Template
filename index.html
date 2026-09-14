@@ -13,51 +13,66 @@
 <header class="app-header">
   <div class="header-inner">
     <div class="brand">
-      <span class="brand-mark" id="brandMark">MY</span>
+      <span class="brand-mark" id="brandMark">ALM</span>
       <div class="brand-text">
         <h1 id="headerSchool" class="brand-title">Avery Label Maker for Schools</h1>
         <p class="brand-sub">Name &amp; subject stickers for workbooks</p>
       </div>
     </div>
-    <div class="gdpr-badge" id="gdprBadge">
-      <span class="gdpr-dot"></span>
-      <div>
-        <strong>Your pupil data stays on your device</strong>
-        <small>Nothing is uploaded to a server</small>
+    <nav class="header-actions" aria-label="Header actions">
+      <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print guide</a>
+      <div class="gdpr-badge" id="gdprBadge">
+        <span class="gdpr-dot"></span>
+        <span class="gdpr-text">
+          <strong>Private</strong>
+          <small>Stays on this device</small>
+        </span>
       </div>
-    </div>
+    </nav>
   </div>
 </header>
 
 <main class="layout">
 
-  <!-- ================= SIDEBAR / CONTROLS ================= -->
+  <!-- ================= CONTROLS ================= -->
   <section class="panel controls-panel" aria-labelledby="controlsTitle">
-    <h2 id="controlsTitle" class="panel-title">Step 1 · Add pupils</h2>
-
-    <!-- CSV upload -->
-    <div class="upload-area" id="dropZone">
-      <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
-      <div class="upload-icon">📄</div>
-      <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
-      <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
-      <p class="upload-error" id="uploadError" hidden></p>
+    <div class="card-head">
+      <h2 id="controlsTitle" class="card-title">Label maker</h2>
+      <p class="card-sub">Four steps to printable Avery sheets.</p>
     </div>
 
-    <div class="sample-row">
-      <button class="btn-ghost btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
-      <a class="btn-ghost btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
-    </div>
+    <!-- Step 1 · Add pupils -->
+    <section class="step" aria-label="Step 1, Add pupils">
+      <div class="step-head">
+        <span class="step-num">1</span>
+        <h3 class="step-title">Add pupils</h3>
+      </div>
 
-    <!-- File status -->
-    <div id="fileStatus" class="file-status" hidden>
-      <span id="fileStatusText"></span>
-      <button class="btn-ghost btn-sm" id="clearFileBtn" type="button">Remove</button>
-    </div>
+      <div class="upload-area" id="dropZone">
+        <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
+        <div class="upload-icon">📄</div>
+        <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
+        <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
+        <p class="upload-error" id="uploadError" hidden></p>
+      </div>
 
-    <!-- Field mapping -->
-    <div id="mappingSection" hidden>
-      <h2 class="panel-title">Step 2 · Map your columns</h2>
+      <div class="sample-row">
+        <button class="btn-soft btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
+        <a class="btn-soft btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
+      </div>
+
+      <div id="fileStatus" class="file-status" hidden>
+        <span id="fileStatusText"></span>
+        <button class="btn-ghost btn-sm" id="clearFileBtn" type="button">Remove</button>
+      </div>
+    </section>
+
+    <!-- Step 2 · Map columns -->
+    <section class="step" id="mappingSection" hidden>
+      <div class="step-head">
+        <span class="step-num">2</span>
+        <h3 class="step-title">Map your columns</h3>
+      </div>
       <p class="hint-text">Tell the tool which column is which. Any field can be hidden.</p>
 
       <div class="field-map" id="mappingRowName"></div>
@@ -67,30 +82,70 @@
       <div class="field-map" id="mappingRowSchool"></div>
 
       <details class="adv-details">
-        <summary>Show/hide fields on the label</summary>
+        <summary>Label fields &amp; logo</summary>
         <label class="check"><input type="checkbox" id="optSchoolTop" checked><span>School name strip on label</span></label>
         <label class="check"><input type="checkbox" id="optClassName" checked><span>Class / form</span></label>
         <label class="check"><input type="checkbox" id="optSubject" checked><span>Subject</span></label>
         <label class="check"><input type="checkbox" id="optYearGroup" checked><span>Year group</span></label>
       </details>
-    </div>
+    </section>
 
-    <!-- Template selection -->
-    <h2 class="panel-title">Step 3 · Choose label sheet</h2>
-    <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
+    <!-- Step 3 · Choose sheet -->
+    <section class="step" aria-label="Step 3, Choose label sheet">
+      <div class="step-head">
+        <span class="step-num">3</span>
+        <h3 class="step-title">Choose label sheet</h3>
+      </div>
+      <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
+    </section>
 
-    <!-- Word order / layout -->
-    <div class="control-row">
-      <label for="layoutSelect">Label layout</label>
-      <select id="layoutSelect">
+    <!-- Step 4 · Label style -->
+    <section class="step" aria-label="Step 4, Label style">
+      <div class="step-head">
+        <span class="step-num">4</span>
+        <h3 class="step-title">Label style</h3>
+      </div>
+
+      <select id="layoutSelect" class="sr-only" aria-label="Label style">
         <option value="classic" selected>School / name / subject</option>
         <option value="badge">Badge style</option>
         <option value="minimal">Minimal sticker</option>
       </select>
-    </div>
 
+      <div class="layout-cards" role="radiogroup" aria-label="Label style">
+        <button type="button" class="layout-card selected" data-layout="classic" role="radio" aria-checked="true">
+          <span class="l-prev l-prev-classic">
+            <span class="p-bar">School name</span>
+            <span class="p-name">Emma Smith</span>
+            <span class="p-subj">Maths</span>
+            <span class="p-meta">7A · Year 7</span>
+          </span>
+          <span class="layout-name">Classic</span>
+          <span class="layout-desc">School strip, name &amp; subject</span>
+        </button>
+        <button type="button" class="layout-card" data-layout="badge" role="radio" aria-checked="false">
+          <span class="l-prev l-prev-badge">
+            <span class="p-badge">AL</span>
+            <span class="p-name">Emma Smith</span>
+            <span class="p-subj">Maths</span>
+          </span>
+          <span class="layout-name">Badge</span>
+          <span class="layout-desc">School badge with details</span>
+        </button>
+        <button type="button" class="layout-card" data-layout="minimal" role="radio" aria-checked="false">
+          <span class="l-prev l-prev-minimal">
+            <span class="p-name">Emma Smith</span>
+            <span class="p-subj">Maths</span>
+          </span>
+          <span class="layout-name">Minimal</span>
+          <span class="layout-desc">Clean name &amp; subject</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Advanced printing options -->
     <details class="adv-details">
-      <summary>Printing options</summary>
+      <summary>Advanced printing options</summary>
       <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
       <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
       <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
@@ -101,7 +156,7 @@
         <p class="hint-text">Some printers silently add a top/side margin. Print the test sheet once, measure the gap around the dashed boxes, then enter the millimetres here (negative = moves up/left). Saved on this device only.</p>
         <div class="cal-row">
           <label>Left↔<span id="calXVal">0</span>mm</label>
-          <input type="number" id="calX" step="0.5" min="-25" max="25"> 
+          <input type="number" id="calX" step="0.5" min="-25" max="25">
         </div>
         <div class="cal-row">
           <label>Top↕<span id="calYVal">0</span>mm</label>
@@ -126,19 +181,13 @@
       </ol>
     </div>
 
-    <!-- Privacy -->
-    <div class="about-block privacy-block">
-      <h3>Your privacy</h3>
-      <ul>
-        <li>Your pupil data stays on your device — nothing is uploaded to a server</li>
-        <li>Works offline once opened</li>
-        <li>Free to use &amp; share between schools</li>
-      </ul>
-      <p class="hint-text"><a class="linklike" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print-settings guide (Windows &amp; Chromebook)</a></p>
-    </div>
-
     <button class="btn-primary" id="printBtn">🖨️ Print / Save as PDF</button>
     <p class="print-note" id="printNote">No preview? Upload a CSV first.</p>
+
+    <div class="privacy-strip">
+      <span>🔒 Your pupil data stays on your device — nothing is uploaded.</span>
+      <a href="print-guide.html" target="_blank" rel="noopener">Print-settings guide</a>
+    </div>
   </section>
 
   <!-- ================= PREVIEW ================= -->
@@ -147,7 +196,10 @@
       <h2 id="previewTitle" class="panel-title">Preview</h2>
       <span class="preview-meta" id="previewMeta">Waiting for a CSV…</span>
     </div>
-    <div id="sheetContainer" class="sheet-scroll"></div>
+    <div class="preview-stage">
+      <span class="a4-badge">A4 · actual size</span>
+      <div id="sheetContainer" class="sheet-scroll"></div>
+    </div>
   </section>
 
 </main>
@@ -166,5 +218,26 @@
 <script src="lib/papaparse.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const sel = document.getElementById("layoutSelect");
+    const cards = Array.from(document.querySelectorAll(".layout-card"));
+    const sync = (v) => {
+      cards.forEach((c) => {
+        const on = c.dataset.layout === v;
+        c.classList.toggle("selected", on);
+        c.setAttribute("aria-checked", on ? "true" : "false");
+      });
+    };
+    sel.addEventListener("change", () => sync(sel.value));
+    cards.forEach((c) => {
+      c.addEventListener("click", () => {
+        sel.value = c.dataset.layout;
+        sel.dispatchEvent(new Event("change", { bubbles: true }));
+        sync(c.dataset.layout);
+      });
+    });
+  });
+</script>
 </body>
 </html>
