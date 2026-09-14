@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Avery Label Maker for Schools</title>
 <meta name="description" content="Free, GDPR-friendly Avery label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=3">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
 </head>
 <body>
@@ -13,7 +13,7 @@
 <header class="app-header">
   <div class="header-inner">
     <div class="brand">
-      <img class="brand-logo" id="brandLogo" src="assets/EDU-logo.jpg" alt="EDU logo"
+      <img class="brand-logo" id="brandLogo" src="assets/EDU-logo.jpg?v=1" alt="EDU logo"
            onload="this.style.display='flex';document.getElementById('brandMark').style.display='none';"
            onerror="this.style.display='none';">
       <span class="brand-mark" id="brandMark" style="display:flex;">ALM</span>
@@ -218,9 +218,9 @@
 <!-- ================= PRINT SHEETS (hidden on screen) ================= -->
 <div id="printRoot" aria-hidden="true"></div>
 
-<script src="lib/papaparse.min.js"></script>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script src="lib/papaparse.min.js?v=3"></script>
+<script src="config.js?v=3"></script>
+<script src="app.js?v=3"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");
