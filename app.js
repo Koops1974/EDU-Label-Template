@@ -251,9 +251,9 @@ function autoMap() {
  *  Field-mapping UI
  * ===================================================================== */
 const MAPPING_FIELDS = [
-  { key: "pupilName", label: "Pupil name (full)" },
+  { key: "pupilName", label: "Full name (single column)" },
   { key: "firstName", label: "First name" },
-  { key: "lastName",  label: "Surname / last name" },
+  { key: "lastName",  label: "Surname" },
   { key: "className", label: "Class / form" },
   { key: "subject",   label: "Subject" },
   { key: "yearGroup", label: "Year group" },
@@ -795,7 +795,8 @@ function initEvents() {
   logoInput.hidden = true;
   document.body.appendChild(logoInput);
   const addLogoRow = () => {
-    const s = document.querySelector("details.adv-details");
+    const s = document.querySelector("#labelFieldsDetails");
+    if (!s) return;
     const row = document.createElement("div");
     row.style.marginTop = "8px";
     const btn = document.createElement("button");

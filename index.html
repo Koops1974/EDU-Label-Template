@@ -76,32 +76,35 @@
         <span class="step-num">2</span>
         <h3 class="step-title">Map your columns</h3>
       </div>
-      <p class="hint-text">Tell the tool which column is which. Any field can be hidden.</p>
+      <details class="adv-details" id="mapDetails" open>
+        <summary>Column mapping &amp; options</summary>
+        <p class="hint-text">Match each CSV column to a label field. Any field can be hidden.</p>
 
-      <div class="field-map" id="mappingRowName"></div>
-      <div class="field-map" id="mappingRowFirst"></div>
-      <div class="field-map" id="mappingRowLast"></div>
-      <div class="field-map" id="mappingRowClass"></div>
-      <div class="field-map" id="mappingRowSubject"></div>
-      <div class="field-map" id="mappingRowYear"></div>
-      <div class="field-map" id="mappingRowSchool"></div>
+        <div class="field-map" id="mappingRowName"></div>
+        <div class="field-map" id="mappingRowFirst"></div>
+        <div class="field-map" id="mappingRowLast"></div>
+        <div class="field-map" id="mappingRowClass"></div>
+        <div class="field-map" id="mappingRowSubject"></div>
+        <div class="field-map" id="mappingRowYear"></div>
+        <div class="field-map" id="mappingRowSchool"></div>
 
-      <div class="sort-row">
+        <div class="sort-row">
         <label for="sortSelect">Label order</label>
         <select id="sortSelect">
           <option value="none" selected>As imported</option>
           <option value="first">A–Z by first name</option>
           <option value="surname">A–Z by surname</option>
         </select>
-        <span class="hint-inline">Reorder pupils before they fill the sheet.</span>
+        <span class="hint-inline">Choose how pupils are ordered on the labels.</span>
       </div>
 
-      <details class="adv-details">
+      <details class="adv-details" id="labelFieldsDetails">
         <summary>Label fields &amp; logo</summary>
         <label class="check"><input type="checkbox" id="optSchoolTop" checked><span>School name strip on label</span></label>
         <label class="check"><input type="checkbox" id="optClassName" checked><span>Class / form</span></label>
         <label class="check"><input type="checkbox" id="optSubject" checked><span>Subject</span></label>
         <label class="check"><input type="checkbox" id="optYearGroup" checked><span>Year group</span></label>
+      </details>
       </details>
     </section>
 
@@ -240,7 +243,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=6"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=8"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");
