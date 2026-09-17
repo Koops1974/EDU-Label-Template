@@ -73,6 +73,8 @@ const SCHOOL_CONFIG = {
    * looks for in your CSV so it can pre-fill the field mapping for you. */
   columnAliases: {
     pupilName: ["name", "student", "pupil", "student name", "pupil name", "child", "full name"],
+    firstName: ["first name", "firstname", "forename", "given name", "first name(s)"],
+    lastName:  ["last name", "lastname", "surname", "family name", "second name", "lname"],
     className: ["class", "form", "class/form", "form group", "class name", "tutor group"],
     subject:   ["subject", "lesson", "area", "subject name"],
     yearGroup: ["year", "year group", "yeargroup", "school year", "key stage"],

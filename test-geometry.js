@@ -42,7 +42,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, calibrationSheetHtml, CAL };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL };"
   );
 eval(appSrc);
 
@@ -117,5 +117,41 @@ check((cal.match(/class="cal-hick/g) || []).length === 22, "top ruler has 22 tic
 check((cal.match(/class="label-cell guides"/g) || []).length === 21, "21 dashed guide boxes on L7160");
 check(cal.includes("left:7.48mm;top:15.49mm"), "first guide sits at L7160 origin (7.48, 15.49)");
 check(cal.includes("cal-head"), "test-sheet explainer text present");
+
+console.log("First/last name columns + A-Z sort:");
+const splitSample = [
+  ["Charlie", "Brown", "7A", "Maths", "Year 7"],
+  ["Alice", "Smith", "7A", "Maths", "Year 7"],
+  ["Bob", "Adams", "7B", "English", "Year 7"],
+].map((r) => ({ "First Name": r[0], "Last Name": r[1], "Class/Form": r[2], Subject: r[3], "Year Group": r[4] }));
+state.columns = ["First Name", "Last Name", "Class/Form", "Subject", "Year Group"];
+state.rows = splitSample;
+__app.autoMap();
+check(state.mapping.firstName && state.mapping.firstName.value === "First Name", "First Name column auto-detected");
+check(state.mapping.lastName && state.mapping.lastName.value === "Last Name", "Last Name column auto-detected");
+check(state.mapping.pupilName && state.mapping.pupilName.kind === "hide", "full-name column hidden when first/last used");
+check(__app.fullName(splitSample[0]) === "Charlie Brown", "full name merged from first+last columns");
+state.sort = "surname";
+let bySurname = __app.planFills().fills.map((f) => f.rowData["First Name"]);
+check(JSON.stringify(bySurname) === JSON.stringify(["Bob", "Charlie", "Alice"]), "A-Z surname order: " + JSON.stringify(bySurname));
+state.sort = "first";
+let byFirst = __app.planFills().fills.map((f) => f.rowData["First Name"]);
+check(JSON.stringify(byFirst) === JSON.stringify(["Alice", "Bob", "Charlie"]), "A-Z first-name order: " + JSON.stringify(byFirst));
+state.sort = "none";
+
+// single full-name column still works; surname derived from last token
+const fullSample = [
+  ["Ann Smith", "7A", "Maths", "Year 7"],
+  ["Zoe Brown", "7A", "Maths", "Year 7"],
+].map((r) => ({ "Pupil Name": r[0], "Class/Form": r[1], Subject: r[2], "Year Group": r[3] }));
+state.columns = ["Pupil Name", "Class/Form", "Subject", "Year Group"];
+state.rows = fullSample;
+__app.autoMap();
+check(state.mapping.pupilName && state.mapping.pupilName.value === "Pupil Name", "single full-name column still detected");
+state.sort = "surname";
+bySurname = __app.planFills().fills.map((f) => f.rowData["Pupil Name"]);
+check(JSON.stringify(bySurname) === JSON.stringify(["Zoe Brown", "Ann Smith"]), "surname derived from full-name fallback: " + JSON.stringify(bySurname));
+state.sort = "none";
+
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

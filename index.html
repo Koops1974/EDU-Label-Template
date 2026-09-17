@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker for Schools</title>
 <meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
 </head>
 <body>
@@ -79,10 +79,22 @@
       <p class="hint-text">Tell the tool which column is which. Any field can be hidden.</p>
 
       <div class="field-map" id="mappingRowName"></div>
+      <div class="field-map" id="mappingRowFirst"></div>
+      <div class="field-map" id="mappingRowLast"></div>
       <div class="field-map" id="mappingRowClass"></div>
       <div class="field-map" id="mappingRowSubject"></div>
       <div class="field-map" id="mappingRowYear"></div>
       <div class="field-map" id="mappingRowSchool"></div>
+
+      <div class="sort-row">
+        <label for="sortSelect">Label order</label>
+        <select id="sortSelect">
+          <option value="none" selected>As imported</option>
+          <option value="first">A–Z by first name</option>
+          <option value="surname">A–Z by surname</option>
+        </select>
+        <span class="hint-inline">Reorder pupils before they fill the sheet.</span>
+      </div>
 
       <details class="adv-details">
         <summary>Label fields &amp; logo</summary>
@@ -227,8 +239,8 @@
 <div id="printRoot" aria-hidden="true"></div>
 
 <script src="lib/papaparse.min.js?v=5"></script>
-<script src="config.js?v=5"></script>
-<script src="app.js?v=5"></script>
+<script src="config.js?v=6"></script>
+<script src="app.js?v=6"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

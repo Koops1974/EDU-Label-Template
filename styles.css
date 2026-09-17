@@ -165,6 +165,14 @@ a.btn-soft { text-decoration: none; text-align: center; }
 
 /* ---------- Field mapping ---------- */
 .field-map { margin-top: 12px; }
+
+.sort-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.sort-row label { font-size: 13px; color: var(--body); font-weight: 600; }
+.sort-row select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: #fff; color: var(--body); cursor: pointer;
+}
+.sort-row select:focus { outline: 2px solid rgba(29,78,216,.25); outline-offset: 1px; }
 .field-map > .field-map { margin-top: 0; }
 .field-map > .field-map > label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
 .field-map select, .field-map .fixed-input {

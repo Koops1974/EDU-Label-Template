@@ -96,7 +96,8 @@ const effectiveBarColor = () => readStoredColor() || SCHOOL_CONFIG.primaryColor;
 const state = {
   columns: [],
   rows: [],
-  mapping: { pupilName: null, className: null, subject: null, yearGroup: null, school: null },
+  mapping: { pupilName: null, firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null },
+  sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
   layout: "classic",
   logoDataUrl: null,
@@ -194,14 +195,11 @@ function showUploadError(msg) {
 function autoMap() {
   const C = SCHOOL_CONFIG.columnAliases;
   const cols = state.columns;
-  const lower = cols.map((c) => c.toLowerCase());
   const find = (aliases) => {
-    // exact match (case-insensitive)
     for (const c of cols) {
       const cl = c.toLowerCase();
       if (aliases.some((a) => a.toLowerCase() === cl)) return { kind: "col", value: c };
     }
-    // substring match either direction
     for (const c of cols) {
       const cl = c.toLowerCase();
       for (const a of aliases) {
@@ -211,12 +209,41 @@ function autoMap() {
     }
     return null;
   };
+
+  const firstName = find(C.firstName);
+  const lastName  = find(C.lastName);
+  const used = new Set([firstName && firstName.value, lastName && lastName.value].filter(Boolean));
+
+  let pupilName = null;
+  // exact match (skip columns already claimed by first/last name)
+  for (const c of cols) {
+    if (used.has(c)) continue;
+    const cl = c.toLowerCase();
+    if (C.pupilName.some((a) => a.toLowerCase() === cl)) { pupilName = { kind: "col", value: c }; break; }
+  }
+  // substring match
+  if (!pupilName) {
+    for (const c of cols) {
+      if (used.has(c)) continue;
+      const cl = c.toLowerCase();
+      for (const a of C.pupilName) {
+        const al = a.toLowerCase();
+        if (cl.includes(al) || al.includes(cl)) { pupilName = { kind: "col", value: c }; break; }
+      }
+      if (pupilName) break;
+    }
+  }
+  // If first/last name columns exist, hide pupilName row; else fall back to first column
+  if (!pupilName) pupilName = used.size ? { kind: "hide" } : { kind: "col", value: cols[0] || "" };
+
   state.mapping = {
-    pupilName: find(C.pupilName) || { kind: "col", value: cols[0] || "" },
+    pupilName,
+    firstName,
+    lastName,
     className: find(C.className),
-    subject: find(C.subject),
+    subject:   find(C.subject),
     yearGroup: find(C.yearGroup),
-    school: find(C.school) || { kind: "fixed", value: SCHOOL_CONFIG.schoolName },
+    school:    find(C.school) || { kind: "fixed", value: SCHOOL_CONFIG.schoolName },
   };
 }
 
@@ -224,7 +251,9 @@ function autoMap() {
  *  Field-mapping UI
  * ===================================================================== */
 const MAPPING_FIELDS = [
-  { key: "pupilName", label: "Pupil name" },
+  { key: "pupilName", label: "Pupil name (full)" },
+  { key: "firstName", label: "First name" },
+  { key: "lastName",  label: "Surname / last name" },
   { key: "className", label: "Class / form" },
   { key: "subject",   label: "Subject" },
   { key: "yearGroup", label: "Year group" },
@@ -298,12 +327,15 @@ function mappingControl(field) {
 }
 
 function renderMapping() {
-  const nameRow = $("#mappingRowName"), clsRow = $("#mappingRowClass"),
+  const nameRow = $("#mappingRowName"), firstRow = $("#mappingRowFirst"),
+        lastRow = $("#mappingRowLast"), clsRow = $("#mappingRowClass"),
         subjRow = $("#mappingRowSubject"), yearRow = $("#mappingRowYear"),
         schRow = $("#mappingRowSchool");
   const clear = (el) => { while (el.firstChild) el.removeChild(el.firstChild); };
-  clear(nameRow); clear(clsRow); clear(subjRow); clear(yearRow); clear(schRow);
+  [nameRow, firstRow, lastRow, clsRow, subjRow, yearRow, schRow].forEach(clear);
   nameRow.appendChild(mappingControl({ key: "pupilName" }));
+  firstRow.appendChild(mappingControl({ key: "firstName" }));
+  lastRow.appendChild(mappingControl({ key: "lastName" }));
   clsRow.appendChild(mappingControl({ key: "className" }));
   subjRow.appendChild(mappingControl({ key: "subject" }));
   yearRow.appendChild(mappingControl({ key: "yearGroup" }));
@@ -330,6 +362,22 @@ function effectiveLogoSrc() {
   return null;
 }
 
+/* Split a pupil row into { first, last } parts.
+ * When the CSV has separate first/last columns those take priority.
+ * When only a full-name column is present the last token becomes surname. */
+function nameParts(row) {
+  const first = fieldValue(row, "firstName");
+  const last  = fieldValue(row, "lastName");
+  if (first || last) return { first, last };
+  const full  = fieldValue(row, "pupilName");
+  const bits  = full.split(/\s+/).filter(Boolean);
+  return { first: bits.length ? bits[0] : "", last: bits.length ? bits[bits.length - 1] : "" };
+}
+
+function fullName(row) {
+  return [nameParts(row).first, nameParts(row).last].filter(Boolean).join(" ");
+}
+
 /* Outermost row layout: which pupils fill which cells.
  * Returns flat array of { rowData, index } for filled cells (index = cell number 0-based). */
 function planFills() {
@@ -337,7 +385,14 @@ function planFills() {
   const perSheet = t.cols * t.rows;
   let pupils = state.rows.slice();
   if (state.opts.skipBlanks) {
-    pupils = pupils.filter((r) => fieldValue(r, "pupilName") !== "");
+    pupils = pupils.filter((r) => fullName(r) !== "");
+  }
+  if (state.sort === "first" || state.sort === "surname") {
+    const keyOf = (r) => (state.sort === "first" ? nameParts(r).first : nameParts(r).last).toLowerCase();
+    pupils = pupils.slice().sort((a, b) => {
+      const ka = keyOf(a), kb = keyOf(b);
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
   }
   const fills = [];
   pupils.forEach((r, i) => {
@@ -355,8 +410,8 @@ function fontScale(labelH) {
 
 function labelContentHtml(row) {
   const C = SCHOOL_CONFIG;
-  const showName = C.label.showPupilName && fieldValue(row, "pupilName") !== "";
-  const name = fieldValue(row, "pupilName");
+  const name = fullName(row);
+  const showName = C.label.showPupilName && name !== "";
   const cls = fieldValue(row, "className");
   const subj = fieldValue(row, "subject");
   const yr = fieldValue(row, "yearGroup");
@@ -617,6 +672,8 @@ function initEvents() {
   $("#clearFileBtn").addEventListener("click", () => {
     state.columns = []; state.rows = [];
     state.mapping = {};
+    state.sort = "none";
+    if (sortSelect) sortSelect.value = "none";
     $("#fileStatus").hidden = true;
     $("#mappingSection").hidden = true;
     renderMapping();
@@ -648,6 +705,16 @@ function initEvents() {
     state.layout = e.target.value;
     renderAll();
   });
+
+  /* A–Z label order (first name or surname) */
+  const sortSelect = $("#sortSelect");
+  if (sortSelect) {
+    sortSelect.value = state.sort;
+    sortSelect.addEventListener("change", () => {
+      state.sort = sortSelect.value;
+      renderAll();
+    });
+  }
 
   /* Print-offset calibration (mm, saved per-browser). Negative y moves
    * everything UP, negative x moves LEFT — same convention as config.js. */
@@ -782,23 +849,23 @@ function readFile(f) {
  *  Swap these out for real pupils — nothing is ever sent anywhere.
  * ===================================================================== */
 const SAMPLE_CSV = [
-  "Pupil Name,Class/Form,Subject,Year Group",
-  "Aarav Patel,7A,Mathematics,Year 7",
-  "Mia Thompson,7A,Mathematics,Year 7",
-  "Oliver Smith,7B,English,Year 7",
-  "Isabella Rossi,7B,English,Year 7",
-  "Noah Williams,8A,Science,Year 8",
-  "Amelia Brown,8A,Science,Year 8",
-  "Leo Garcia,8B,History,Year 8",
-  "Sophia Jones,8B,History,Year 8",
-  "Lucas Miller,9A,Geography,Year 9",
-  "Ava Wilson,9A,Geography,Year 9",
-  "Ethan Davis,9B,Art,Year 9",
-  "Sofia Martin,9B,Art,Year 9",
-  "Mason Thomas,10A,French,Year 10",
-  "Grace Anderson,10A,French,Year 10",
-  "Jacob White,10B,Computing,Year 10",
-  "Lily Harris,10B,Computing,Year 10",
+  "First Name,Last Name,Class/Form,Subject,Year Group",
+  "Aarav,Patel,7A,Mathematics,Year 7",
+  "Mia,Thompson,7A,Mathematics,Year 7",
+  "Oliver,Smith,7B,English,Year 7",
+  "Isabella,Rossi,7B,English,Year 7",
+  "Noah,Williams,8A,Science,Year 8",
+  "Amelia,Brown,8A,Science,Year 8",
+  "Leo,Garcia,8B,History,Year 8",
+  "Sophia,Jones,8B,History,Year 8",
+  "Lucas,Miller,9A,Geography,Year 9",
+  "Ava,Wilson,9A,Geography,Year 9",
+  "Ethan,Davis,9B,Art,Year 9",
+  "Sofia,Martin,9B,Art,Year 9",
+  "Mason,Thomas,10A,French,Year 10",
+  "Grace,Anderson,10A,French,Year 10",
+  "Jacob,White,10B,Computing,Year 10",
+  "Lily,Harris,10B,Computing,Year 10",
 ].join("\n");
 
 /* =====================================================================
