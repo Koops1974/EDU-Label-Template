@@ -79,6 +79,7 @@ const SCHOOL_CONFIG = {
     subject:   ["subject", "lesson", "area", "subject name"],
     yearGroup: ["year", "year group", "yeargroup", "school year", "key stage"],
     school:    ["school", "school name", "academy", "establishment"],
+    colour:    ["colour", "color", "colour code", "color code", "text colour", "text color", "font colour", "font color", "label colour", "label color"],
     custom:    ["custom", "other", "extra", "note"],
   },
 };

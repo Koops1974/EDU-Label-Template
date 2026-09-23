@@ -195,6 +195,12 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .colour-row { display: flex; align-items: center; gap: 10px; margin: 10px 0 6px; }
 .colour-row label { font-size: 13px; color: var(--body); }
 .colour-row input[type="color"] { width: 42px; height: 30px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; }
+.colour-row select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: #fff; color: var(--body); cursor: pointer;
+}
+.colour-row select:focus { outline: 2px solid rgba(29,78,216,.25); outline-offset: 1px; }
+.colour-row select:disabled { opacity: .55; cursor: not-allowed; }
 .hint-inline { font-size: 12px; color: var(--muted); }
 
 /* ---------- Template cards ---------- */
@@ -411,6 +417,13 @@ a.btn-soft { text-decoration: none; text-align: center; }
   background: var(--accent-soft, #e2e8f0); border-radius: 99px; margin: 0 8% 4%;
   padding: 1.5% 4%;
 }
+/* Badge layout: put the logo above the school name, centred on the strip */
+.label-inner.badge .label-school {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; white-space: normal;
+}
+.label-inner.badge .label-school.bar { padding: 3.5% 6%; }
+.label-inner.badge .lbl-school-text { max-width: 100%; }
 .label-inner.minimal .label-school { display: none; }
 .label-inner.minimal .label-meta { display: none; }
 .app-footer {

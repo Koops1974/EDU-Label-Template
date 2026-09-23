@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker for Schools</title>
 <meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=8">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
 </head>
 <body>
@@ -78,15 +78,15 @@
       </div>
       <details class="adv-details" id="mapDetails" open>
         <summary>Column mapping &amp; options</summary>
-        <p class="hint-text">Match each CSV column to a label field. Any field can be hidden.</p>
+        <p class="hint-text">Fields are numbered top to bottom. Each dropdown lists your uploaded CSV columns (labelled A, B, C… as in a spreadsheet). Any field can be hidden.</p>
 
-        <div class="field-map" id="mappingRowName"></div>
         <div class="field-map" id="mappingRowFirst"></div>
         <div class="field-map" id="mappingRowLast"></div>
         <div class="field-map" id="mappingRowClass"></div>
         <div class="field-map" id="mappingRowSubject"></div>
         <div class="field-map" id="mappingRowYear"></div>
         <div class="field-map" id="mappingRowSchool"></div>
+        <div class="field-map" id="mappingRowColour"></div>
 
         <div class="sort-row">
         <label for="sortSelect">Label order</label>
@@ -167,6 +167,16 @@
       <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
       <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
       <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
+      <label class="check"><input type="checkbox" id="optColourCode"><span>Colour-code text from a colour column (e.g. "blue", "orange")</span></label>
+      <div class="colour-row" id="colourFieldRow">
+        <label for="colourFieldSelect">Colour applies to</label>
+        <select id="colourFieldSelect">
+          <option value="name" selected>Name</option>
+          <option value="subject">Subject</option>
+          <option value="meta">Class / year</option>
+          <option value="all">Whole label text</option>
+        </select>
+      </div>
 
       <div class="colour-row">
         <label for="labelBarColor">School strip colour</label>
@@ -242,8 +252,8 @@
 <div id="printRoot" aria-hidden="true"></div>
 
 <script src="lib/papaparse.min.js?v=5"></script>
-<script src="config.js?v=6"></script>
-<script src="app.js?v=8"></script>
+<script src="config.js?v=7"></script>
+<script src="app.js?v=10"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

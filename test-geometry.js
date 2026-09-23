@@ -153,5 +153,40 @@ bySurname = __app.planFills().fills.map((f) => f.rowData["Pupil Name"]);
 check(JSON.stringify(bySurname) === JSON.stringify(["Zoe Brown", "Ann Smith"]), "surname derived from full-name fallback: " + JSON.stringify(bySurname));
 state.sort = "none";
 
+console.log("Colour-coding column:");
+const colourSample = [
+  ["Ruby", "Baxter", "7A", "Maths", "Year 7", "Blue"],
+  ["Nova", "Wells", "7A", "Maths", "Year 7", "Orange"],
+  ["Tess", "Reds", "7B", "English", "Year 7", "dark red"],
+  ["Addie", "Green", "7B", "English", "Year 7", "#00ff00"],
+].map((r) => ({ "First Name": r[0], "Last Name": r[1], "Class/Form": r[2], Subject: r[3], "Year Group": r[4], Colour: r[5] }));
+state.columns = ["First Name", "Last Name", "Class/Form", "Subject", "Year Group", "Colour"];
+state.rows = colourSample;
+state.layout = "classic";
+state.sort = "none";
+__app.autoMap();
+check(state.mapping.colour && state.mapping.colour.value === "Colour", "Colour column auto-detected");
+state.opts.colourCode = false;
+const plainSheet = __app.buildSheets(false)[0];
+check(!plainSheet.includes('class="label-name" style'), "no colour on names when the advanced option is off");
+state.opts.colourCode = true;
+const colourSheet = __app.buildSheets(false)[0];
+check(colourSheet.includes('class="label-name" style="color:#1d4ed8;"'), "Blue → #1d4ed8 on the name");
+check(colourSheet.includes('class="label-name" style="color:#f97316;"'), "Orange → #f97316 on the name");
+check(colourSheet.includes('class="label-name" style="color:#dc2626;"'), "two-word 'dark red' resolves to red (#dc2626)");
+check(colourSheet.includes('class="label-name" style="color:#00ff00;"'), "raw hex code (#00ff00) used as-is");
+state.opts.colourField = "subject";
+const subjSheet = __app.buildSheets(false)[0];
+check(subjSheet.includes('class="label-subject" style="color:#1d4ed8;"'), "colour targets Subject when selected");
+check(!subjSheet.includes('class="label-name" style="color:#1d4ed8;"'), "name left uncoloured when Subject selected");
+state.opts.colourField = "meta";
+const metaSheet = __app.buildSheets(false)[0];
+check(metaSheet.includes('class="label-meta" style="color:#1d4ed8;"'), "colour targets Class/year row when selected");
+state.opts.colourField = "all";
+const allSheet = __app.buildSheets(false)[0];
+check(allSheet.includes('label-inner classic color" style="color:#1d4ed8;'), "colour targets whole label text when selected");
+state.opts.colourField = "name";
+state.opts.colourCode = false;
+
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

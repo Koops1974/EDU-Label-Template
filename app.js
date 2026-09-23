@@ -96,7 +96,7 @@ const effectiveBarColor = () => readStoredColor() || SCHOOL_CONFIG.primaryColor;
 const state = {
   columns: [],
   rows: [],
-  mapping: { pupilName: null, firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null },
+  mapping: { firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null, colour: null },
   sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
   layout: "classic",
@@ -105,6 +105,8 @@ const state = {
     showGuides: true,
     color: true,
     skipBlanks: true,
+    colourCode: false,
+    colourField: "name",
     showSchoolTop: SCHOOL_CONFIG.label.showSchoolNameTop,
     showClassName: SCHOOL_CONFIG.label.showClassName,
     showSubject: SCHOOL_CONFIG.label.showSubject,
@@ -121,6 +123,35 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   .replace(/"/g, "&quot;");
+
+/* Spreadsheet-style column letters: 0→A, 1→B, … 25→Z, 26→AA, 27→AB. */
+const columnLetter = (i) => {
+  let s = "";
+  while (i >= 0) { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; }
+  return s;
+};
+
+/* Colour names → hex, used for the "Text colour" mapping field.
+ * A CSV colour column can hold any name here (or a hex code) and the
+ * matching label text is coloured (and already bold). */
+const COLOUR_MAP = {
+  blue: "#1d4ed8", navy: "#1e3a8a", red: "#dc2626", orange: "#f97316",
+  green: "#16a34a", purple: "#7c3aed", violet: "#7c3aed", pink: "#db2777",
+  yellow: "#ca8a04", amber: "#b45309", gold: "#b45309", black: "#000000",
+  white: "#ffffff", grey: "#6b7280", gray: "#6b7280", brown: "#92400e",
+  teal: "#0d9488", cyan: "#0891b2", maroon: "#9f1239", magenta: "#c026d3",
+  lime: "#65a30d", turquoise: "#14b8a6", silver: "#9ca3af",
+};
+function resolveColour(raw) {
+  const v = String(raw == null ? "" : raw).trim().toLowerCase();
+  if (!v || v === "none" || v === "default") return null;
+  if (/^#?[0-9a-f]{6}$/i.test(v)) return v;
+  if (COLOUR_MAP[v]) return COLOUR_MAP[v];
+  for (const w of v.split(/[\s\-]+/)) { // "light blue" → blue
+    if (COLOUR_MAP[w]) return COLOUR_MAP[w];
+  }
+  return null;
+}
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
@@ -244,6 +275,7 @@ function autoMap() {
     subject:   find(C.subject),
     yearGroup: find(C.yearGroup),
     school:    find(C.school) || { kind: "fixed", value: SCHOOL_CONFIG.schoolName },
+    colour:    find(C.colour || []) || { kind: "hide" },
   };
 }
 
@@ -251,13 +283,13 @@ function autoMap() {
  *  Field-mapping UI
  * ===================================================================== */
 const MAPPING_FIELDS = [
-  { key: "pupilName", label: "Full name (single column)" },
   { key: "firstName", label: "First name" },
   { key: "lastName",  label: "Surname" },
   { key: "className", label: "Class / form" },
   { key: "subject",   label: "Subject" },
   { key: "yearGroup", label: "Year group" },
   { key: "school",    label: "School name" },
+  { key: "colour",    label: "Text colour (e.g. blue, orange)" },
 ];
 
 function mappingControl(field) {
@@ -265,7 +297,9 @@ function mappingControl(field) {
   wrap.className = "field-map";
 
   const lab = document.createElement("label");
-  lab.textContent = MAPPING_FIELDS.find((f) => f.key === field.key).label;
+  const def = MAPPING_FIELDS.find((f) => f.key === field.key);
+  const num = def ? MAPPING_FIELDS.indexOf(def) + 1 : "";
+  lab.textContent = num ? `Field ${num} · ${def.label}` : def.label;
   wrap.appendChild(lab);
 
   const row = document.createElement("div");
@@ -274,7 +308,7 @@ function mappingControl(field) {
 
   const select = document.createElement("select");
   const opts = [{ kind: "hide", value: "", label: "— Hidden —" }];
-  state.columns.forEach((c) => opts.push({ kind: "col", value: c, label: "Column: " + c }));
+  state.columns.forEach((c, i) => opts.push({ kind: "col", value: c, label: "Column " + columnLetter(i) + ": " + c }));
   opts.push({ kind: "fixed", value: "__fixed__", label: "✏️ Fixed text…" });
   opts.forEach((o) => {
     const opt = document.createElement("option");
@@ -327,19 +361,19 @@ function mappingControl(field) {
 }
 
 function renderMapping() {
-  const nameRow = $("#mappingRowName"), firstRow = $("#mappingRowFirst"),
-        lastRow = $("#mappingRowLast"), clsRow = $("#mappingRowClass"),
-        subjRow = $("#mappingRowSubject"), yearRow = $("#mappingRowYear"),
-        schRow = $("#mappingRowSchool");
+  const firstRow = $("#mappingRowFirst"), lastRow = $("#mappingRowLast"),
+        clsRow = $("#mappingRowClass"), subjRow = $("#mappingRowSubject"),
+        yearRow = $("#mappingRowYear"), schRow = $("#mappingRowSchool"),
+        colourRow = $("#mappingRowColour");
   const clear = (el) => { while (el.firstChild) el.removeChild(el.firstChild); };
-  [nameRow, firstRow, lastRow, clsRow, subjRow, yearRow, schRow].forEach(clear);
-  nameRow.appendChild(mappingControl({ key: "pupilName" }));
+  [firstRow, lastRow, clsRow, subjRow, yearRow, schRow, colourRow].forEach(clear);
   firstRow.appendChild(mappingControl({ key: "firstName" }));
   lastRow.appendChild(mappingControl({ key: "lastName" }));
   clsRow.appendChild(mappingControl({ key: "className" }));
   subjRow.appendChild(mappingControl({ key: "subject" }));
   yearRow.appendChild(mappingControl({ key: "yearGroup" }));
   schRow.appendChild(mappingControl({ key: "school" }));
+  colourRow.appendChild(mappingControl({ key: "colour" }));
 }
 
 /* =====================================================================
@@ -434,23 +468,26 @@ function labelContentHtml(row) {
     );
   }
 
+  const rowColour = o.colourCode ? resolveColour(fieldValue(row, "colour")) : null;
+  const cStyle = (sel) => (rowColour && o.colourField === sel) ? ` style="color:${rowColour};"` : "";
+
   const namePart = showName
-    ? `<div class="label-name">${esc(name)}</div>`
+    ? `<div class="label-name"${cStyle("name")}>${esc(name)}</div>`
     : "";
 
   let subjectPart = "";
   if (o.showSubject && subj) {
-    subjectPart = `<div class="label-subject">${esc(subj)}</div>`;
+    subjectPart = `<div class="label-subject"${cStyle("subject")}>${esc(subj)}</div>`;
   }
 
   const metaBits = [];
   if (o.showClassName && cls) metaBits.push(`${C.label.showClassLabel}${esc(cls)}`);
   if (o.showYearGroup && yr) metaBits.push(esc(yr));
   const metaPart = metaBits.length
-    ? `<div class="label-meta"><span>${metaBits.join("</span><span>")}</span></div>`
+    ? `<div class="label-meta"${cStyle("meta")}><span>${metaBits.join("</span><span>")}</span></div>`
     : "";
 
-  return { namePart, subjectPart, metaPart, parts, name };
+  return { namePart, subjectPart, metaPart, parts, name, rowColour };
 }
 
 function buildLabelCell(row, t, cellIndex) {
@@ -460,11 +497,11 @@ function buildLabelCell(row, t, cellIndex) {
   const top = calTop(t.originY + rowIdx * t.pitchY);
 
   const C = SCHOOL_CONFIG;
-  const { namePart, subjectPart, metaPart, parts } = labelContentHtml(row);
+  const { namePart, subjectPart, metaPart, parts, rowColour } = labelContentHtml(row);
 
   const labelH = t.labelH;
   const fs = fontScale(labelH);
-  const outerTextColor = C.defaultTextColor;
+  const outerTextColor = (rowColour && state.opts.colourField === "all") ? rowColour : C.defaultTextColor;
   const accentSoft = hexToRgba(C.accentColor, 0.28);
 
   const schoolTop = parts.join("");
@@ -688,11 +725,12 @@ function initEvents() {
 
   state.columns = [];
   ["optSchoolTop", "optClassName", "optSubject", "optYearGroup",
-   "optGuides", "optColor", "optSkipBlanks"].forEach((id) => {
+   "optGuides", "optColor", "optSkipBlanks", "optColourCode"].forEach((id) => {
     const map = {
       optSchoolTop: "showSchoolTop", optClassName: "showClassName",
       optSubject: "showSubject", optYearGroup: "showYearGroup",
       optGuides: "showGuides", optColor: "color", optSkipBlanks: "skipBlanks",
+      optColourCode: "colourCode",
     };
     $(`#${id}`).checked = state.opts[map[id]];
     $(`#${id}`).addEventListener("change", () => {
@@ -700,6 +738,22 @@ function initEvents() {
       renderAll();
     });
   });
+
+  const colourFieldSelect = $("#colourFieldSelect");
+  if (colourFieldSelect) {
+    colourFieldSelect.value = state.opts.colourField;
+    colourFieldSelect.disabled = !state.opts.colourCode;
+    colourFieldSelect.addEventListener("change", () => {
+      state.opts.colourField = colourFieldSelect.value;
+      renderAll();
+    });
+    const colourCodeChk = $("#optColourCode");
+    if (colourCodeChk) {
+      colourCodeChk.addEventListener("change", (e) => {
+        colourFieldSelect.disabled = !e.target.checked;
+      });
+    }
+  }
 
   $("#layoutSelect").addEventListener("change", (e) => {
     state.layout = e.target.value;
@@ -850,23 +904,23 @@ function readFile(f) {
  *  Swap these out for real pupils — nothing is ever sent anywhere.
  * ===================================================================== */
 const SAMPLE_CSV = [
-  "First Name,Last Name,Class/Form,Subject,Year Group",
-  "Aarav,Patel,7A,Mathematics,Year 7",
-  "Mia,Thompson,7A,Mathematics,Year 7",
-  "Oliver,Smith,7B,English,Year 7",
-  "Isabella,Rossi,7B,English,Year 7",
-  "Noah,Williams,8A,Science,Year 8",
-  "Amelia,Brown,8A,Science,Year 8",
-  "Leo,Garcia,8B,History,Year 8",
-  "Sophia,Jones,8B,History,Year 8",
-  "Lucas,Miller,9A,Geography,Year 9",
-  "Ava,Wilson,9A,Geography,Year 9",
-  "Ethan,Davis,9B,Art,Year 9",
-  "Sofia,Martin,9B,Art,Year 9",
-  "Mason,Thomas,10A,French,Year 10",
-  "Grace,Anderson,10A,French,Year 10",
-  "Jacob,White,10B,Computing,Year 10",
-  "Lily,Harris,10B,Computing,Year 10",
+  "First Name,Last Name,Class/Form,Subject,Year Group,Colour",
+  "Aarav,Patel,7A,Mathematics,Year 7,Blue",
+  "Mia,Thompson,7A,Mathematics,Year 7,Orange",
+  "Oliver,Smith,7B,English,Year 7,Green",
+  "Isabella,Rossi,7B,English,Year 7,Purple",
+  "Noah,Williams,8A,Science,Year 8,Red",
+  "Amelia,Brown,8A,Science,Year 8,Teal",
+  "Leo,Garcia,8B,History,Year 8,Pink",
+  "Sophia,Jones,8B,History,Year 8,Blue",
+  "Lucas,Miller,9A,Geography,Year 9,Orange",
+  "Ava,Wilson,9A,Geography,Year 9,Green",
+  "Ethan,Davis,9B,Art,Year 9,Brown",
+  "Sofia,Martin,9B,Art,Year 9,Purple",
+  "Mason,Thomas,10A,French,Year 10,Red",
+  "Grace,Anderson,10A,French,Year 10,Teal",
+  "Jacob,White,10B,Computing,Year 10,Pink",
+  "Lily,Harris,10B,Computing,Year 10,Blue",
 ].join("\n");
 
 /* =====================================================================
