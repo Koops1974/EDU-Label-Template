@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Label Maker for Schools</title>
 <meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -33,6 +33,8 @@
     </div>
     <nav class="header-actions" aria-label="Header actions">
       <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print guide</a>
+      <a class="header-link" href="feedback.html">💬 Feedback</a>
+      <a class="header-link" href="https://ko-fi.com/Q2K727N8IU" target="_blank" rel="noopener">☕ Buy me a coffee</a>
       <div class="gdpr-badge" id="gdprBadge">
         <span class="gdpr-dot"></span>
         <span class="gdpr-text">
@@ -168,6 +170,16 @@
           <span class="layout-desc">Clean name &amp; subject</span>
         </button>
       </div>
+
+      <div class="logo-size-row">
+        <label for="logoSizeSelect">Logo size</label>
+        <select id="logoSizeSelect">
+          <option value="std" selected>Standard</option>
+          <option value="lg">Large</option>
+          <option value="xl">Extra large</option>
+        </select>
+        <span class="hint-inline">Applies to the logo on each label (if one is set)</span>
+      </div>
     </section>
 
     <!-- Advanced printing options -->
@@ -262,7 +274,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

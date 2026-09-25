@@ -107,6 +107,7 @@ const state = {
     skipBlanks: true,
     colourCode: false,
     colourField: "name",
+    logoSize: "std",
     showSchoolTop: SCHOOL_CONFIG.label.showSchoolNameTop,
     showClassName: SCHOOL_CONFIG.label.showClassName,
     showSubject: SCHOOL_CONFIG.label.showSubject,
@@ -152,6 +153,8 @@ function resolveColour(raw) {
   }
   return null;
 }
+
+const LOGO_MULT = { std: 1, lg: 1.7, xl: 2.4 };
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
@@ -518,6 +521,7 @@ function buildLabelCell(row, t, cellIndex) {
     `--accent-soft:${accentSoft};` +
     `--bar-bg:${effectiveBarColor()};` +
     `--bar-text:${C.printTextColor};` +
+    `--logo-mult:${(LOGO_MULT[state.opts.logoSize] || 1)};` +
     `--label-bg:#fff;`;
 
   const colorCls = state.opts.color ? " color" : "";
@@ -766,6 +770,15 @@ function initEvents() {
     sortSelect.value = state.sort;
     sortSelect.addEventListener("change", () => {
       state.sort = sortSelect.value;
+      renderAll();
+    });
+  }
+
+  const logoSizeSelect = $("#logoSizeSelect");
+  if (logoSizeSelect) {
+    logoSizeSelect.value = state.opts.logoSize;
+    logoSizeSelect.addEventListener("change", () => {
+      state.opts.logoSize = logoSizeSelect.value;
       renderAll();
     });
   }

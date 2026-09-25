@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feedback — Label Maker for Schools</title>
+<meta name="description" content="Send feedback or change requests for the Label Maker for Schools.">
+<link rel="stylesheet" href="styles.css?v=9">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+
+<style>
+  .fb-main { max-width: 720px; margin: 22px auto; padding: 0 22px 40px; }
+  .fb-hero {
+    background: linear-gradient(135deg, #0b1b3a, #1e3a8a);
+    color: #fff; border-radius: 14px; padding: 26px 30px; margin-bottom: 22px;
+  }
+  .fb-hero h2 { margin: 0 0 8px; font-size: 24px; }
+  .fb-hero p { margin: 4px 0; color: #dbe6ff; font-size: 14.5px; }
+  .fb-hero .back-link { display: inline-block; margin-top: 12px; color: #fff; font-size: 13px; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 22px 24px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--body); margin-bottom: 5px; }
+  .field .opt { font-weight: 400; color: var(--muted); }
+  .field input, .field textarea {
+    width: 100%; box-sizing: border-box; padding: 9px 11px;
+    border: 1px solid var(--border); border-radius: 9px;
+    font-size: 14px; font-family: inherit; color: var(--ink); background: #fff;
+  }
+  .field input:focus, .field textarea:focus { outline: 2px solid rgba(29,78,216,.25); outline-offset: 1px; }
+  .fb-status { display: none; margin-top: 14px; padding: 12px 16px; border-radius: 10px; font-size: 14px; }
+  .fb-status.ok { display: block; background: #ecf9f3; border: 1px solid #c2ecdb; color: #14653e; }
+  .fb-status.err { display: block; background: #fdf0ee; border: 1px solid #f3c6c0; color: #b91c1c; }
+  .coffee-box {
+    margin-top: 20px; padding: 18px 24px; border: 1px solid #f5d98b;
+    background: #fff8e6; border-radius: 14px; text-align: center;
+  }
+  .coffee-box h3 { margin: 0 0 6px; font-size: 17px; color: #8a5a00; }
+  .coffee-box p { margin: 0 0 12px; font-size: 13.5px; color: #6b5010; }
+  .fb-footer { margin-top: 26px; font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <span class="brand-mark">💬</span>
+      <div class="brand-text">
+        <h1 class="brand-title">Feedback</h1>
+        <p class="brand-sub">Label Maker for Schools</p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="fb-main">
+  <div class="fb-hero">
+    <h2>I'd love to hear from you</h2>
+    <p>If you're enjoying the label maker, please send a message and let me know how you've been using it — or if you have any feedback or change requests.</p>
+    <a class="back-link" href="index.html">← Back to the label maker</a>
+  </div>
+
+  <div class="card">
+    <form id="feedbackForm" action="https://formspree.io/f/meaolzeb" method="POST">
+      <input type="hidden" name="_subject" value="Label Maker feedback">
+      <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="field">
+        <label for="fbName">Your name <span class="opt">(optional)</span></label>
+        <input type="text" id="fbName" name="name" maxlength="100" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="fbEmail">Email <span class="opt">(optional, if you'd like a reply)</span></label>
+        <input type="email" id="fbEmail" name="_replyto" maxlength="120" autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="fbMsg">How are you using it / feedback / change requests <span style="color:#b91c1c">*</span></label>
+        <textarea id="fbMsg" name="message" rows="6" required maxlength="3000" placeholder="e.g. We print subject stickers for Year 7 workbooks and would love it if…"></textarea>
+      </div>
+
+      <button type="submit" class="btn-primary" style="width:100%">Send message</button>
+      <div class="fb-status ok" id="fbOk">✔ Message sent — thanks for the feedback!</div>
+      <div class="fb-status err" id="fbErr">⚠ Could not send just now. Please try again, or email me directly.</div>
+    </form>
+  </div>
+
+  <!-- Coffee button -->
+  <div class="coffee-box" id="coffeeBox">
+    <h3>☕ Enjoying the label maker?</h3>
+    <p>It's free to use for every school. If it saves you time, you can buy me a coffee to say thanks.</p>
+    <a href="https://ko-fi.com/Q2K727N8IU" target="_blank" rel="noopener"><img height="36" style="border:0px;height:36px;" src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"></a>
+  </div>
+
+  <div class="fb-footer">
+    <span id="footerText">Label Maker for Schools — free, open source, GDPR-friendly</span> · <a href="print-guide.html">Print-settings guide</a>
+  </div>
+</main>
+
+<script>
+  document.getElementById("feedbackForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var form = e.target;
+    var btn = form.querySelector("button[type='submit']");
+    var ok = document.getElementById("fbOk");
+    var err = document.getElementById("fbErr");
+    ok.style.display = "none";
+    err.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+    fetch(form.action, {
+      method: "POST",
+      body: new FormData(form),
+      headers: { "Accept": "application/json" },
+    }).then(function (res) {
+      if (res.ok) {
+        form.hidden = true;
+        ok.style.display = "block";
+      } else {
+        throw new Error("bad status");
+      }
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Send message";
+      err.style.display = "block";
+    });
+  });
+</script>
+</body>
+</html>

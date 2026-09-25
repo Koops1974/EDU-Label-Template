@@ -254,6 +254,15 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .layout-name { font-size: 13px; font-weight: 700; color: var(--ink); }
 .layout-desc { font-size: 11px; color: var(--muted); line-height: 1.35; }
 
+/* ---------- Logo size picker (label style step) ---------- */
+.logo-size-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.logo-size-row label { font-size: 13px; color: var(--body); font-weight: 600; }
+.logo-size-row select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: #fff; color: var(--body); cursor: pointer;
+}
+.logo-size-row select:focus { outline: 2px solid rgba(29,78,216,.25); outline-offset: 1px; }
+
 /* ---------- Mini label previews (decorative, screen only) ---------- */
 .l-prev {
   display: flex; flex-direction: column; gap: 4px; height: 82px;
@@ -392,7 +401,7 @@ a.btn-soft { text-decoration: none; text-align: center; }
   font-size: var(--school-fs, 3mm); padding: 2.5% 6%;
   display: flex; align-items: center; justify-content: center; gap: 3%;
 }
-.lbl-logo { height: calc(var(--school-fs, 3mm) * 1.5); width: auto; max-width: 22%; object-fit: contain; }
+.lbl-logo { height: calc(var(--school-fs, 3mm) * 1.5 * var(--logo-mult, 1)); width: auto; max-width: 100%; object-fit: contain; }
 .lbl-school-text { overflow: hidden; text-overflow: ellipsis; }
 .label-name {
   flex: 1 1 auto; font-weight: 800; line-height: 1.15;

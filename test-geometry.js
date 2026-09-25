@@ -109,6 +109,17 @@ state.layout = "badge";
 const badgeSheet = __app.buildSheets(false)[0];
 check(badgeSheet.includes('label-inner badge'), "badge layout class applied: " + badgeSheet.slice(100, 500).replace(/\n/g, ""));
 
+console.log("Logo size option:");
+state.opts.logoSize = "lg";
+const lgSheet = __app.buildSheets(false)[0];
+check(lgSheet.includes("--logo-mult:1.7;"), "Large logo → --logo-mult:1.7");
+state.opts.logoSize = "xl";
+const xlSheet = __app.buildSheets(false)[0];
+check(xlSheet.includes("--logo-mult:2.4;"), "Extra large logo → --logo-mult:2.4");
+state.opts.logoSize = "std";
+const stdSheet = __app.buildSheets(false)[0];
+check(stdSheet.includes("--logo-mult:1;"), "Standard logo → --logo-mult:1");
+
 console.log("Calibration test sheet:");
 const cal = __app.calibrationSheetHtml();
 check((cal.match(/class="cal-tick"/g) || []).length === 30, "left ruler has 30 ticks (0..290mm)");
