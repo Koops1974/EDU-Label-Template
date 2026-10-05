@@ -45,7 +45,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake };"
   );
 eval(appSrc);
 
@@ -258,6 +258,44 @@ check(state.skippedRows.length === 0, "no skipped rows for a single full-name co
 __app.handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
 check(state.rows.length === 16, "sample CSV still loads all 16 pupils");
 check(state.skippedRows.length === 0, "sample CSV reports no skipped rows");
+
+console.log("CSV encoding (accents survive whatever the spreadsheet used):");
+/* Escapes, not literal accented letters, so this test file's own encoding
+ * can never be the thing that breaks. */
+const accentRow =
+  "Pupil Name,Subject\n" +
+  "Bj\u00f8rn S\u00f8rensen,Maths\n" +
+  "Ana N\u00fa\u00f1ez,Art\n" +
+  "Zo\u00eb O'Brien,Music\n";
+const accentNames = "Bj\u00f8rn S\u00f8rensen|Ana N\u00fa\u00f1ez|Zo\u00eb O'Brien";
+const namesOf = (decoded) => decoded.split("\n").filter((l) => l !== "").slice(1).map((l) => l.split(",")[0]);
+
+// 1. Plain UTF-8 — the normal case, nothing to announce.
+const utf8 = __app.decodeCsvBuffer(Buffer.from(accentRow, "utf8"));
+check(utf8.note === "" && utf8.text === accentRow, "UTF-8 file read cleanly with no warning");
+check(namesOf(utf8.text).join("|") === accentNames, "UTF-8 names intact: " + JSON.stringify(namesOf(utf8.text)));
+
+// 2. windows-1252 bytes, as Excel on Windows produces.
+const win = __app.decodeCsvBuffer(Buffer.from(accentRow, "latin1"));
+check(namesOf(win.text).join("|") === accentNames, "windows-1252 accents restored: " + JSON.stringify(namesOf(win.text)));
+check(/windows-1252/.test(win.note), "teacher is told the file was read as windows-1252: " + win.note);
+
+// 3. UTF-8 text that was already decoded as Latin-1 once, then saved back.
+const doubleEncoded = Buffer.from(Buffer.from(accentRow, "utf8").toString("latin1"), "utf8");
+const repaired = __app.decodeCsvBuffer(doubleEncoded);
+check(namesOf(repaired.text).join("|") === accentNames, "twice-encoded text repaired: " + JSON.stringify(namesOf(repaired.text)));
+check(/repaired/.test(repaired.note), "teacher is told the text was repaired: " + repaired.note);
+
+// 4. A leading BOM must not end up glued to the first column heading.
+const withBom = __app.decodeCsvBuffer(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from("Pupil Name,Subject\nAda Lovelace,Maths\n", "utf8")]));
+__app.handleCsvText(withBom.text, "bom.csv");
+check(state.columns[0] === "Pupil Name", "BOM stripped from the first heading: " + JSON.stringify(state.columns[0]));
+check(state.rows.length === 1 && __app.fullName(state.rows[0]) === "Ada Lovelace",
+  "BOM file loads its one pupil: " + JSON.stringify(state.rows.map((r) => __app.fullName(r))));
+
+// 5. Real non-Latin text must be left completely alone.
+const cjk = __app.decodeCsvBuffer(Buffer.from("Pupil Name,Subject\n\u6850\u85e4 \u82b1\u5b50,Maths\n", "utf8"));
+check(cjk.text.includes("\u6850\u85e4 \u82b1\u5b50") && cjk.note === "", "Japanese text left untouched");
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

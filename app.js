@@ -201,7 +201,58 @@ function renderTemplateList() {
 /* =====================================================================
  *  CSV handling
  * ===================================================================== */
-function handleCsvText(text, fileName) {
+/* Spreadsheets don't agree on an encoding: Google Sheets and modern Excel
+ * write UTF-8, but Excel on Windows still defaults to windows-1252
+ * (Latin-1). Decoding the latter as UTF-8 turns "Bjørn" into "BjÃ¸rn" and
+ * can even blank characters out, so decode with the encoding the file
+ * actually uses and only tell the teacher when we had to step in. */
+
+/* The tell-tale sign of UTF-8 bytes read as Latin-1: "Ã©" for é, "â€™"
+ * for a curly apostrophe, "Â°" for a degree sign. */
+const MOJIBAKE = /(?:\u00C2|\u00C3|\u00E2)[\u0080-\u00FF\u0093\u0094\u009C\u009D]/;
+
+/* Re-read text that was already decoded wrongly: turn each character back
+ * into the single byte it came from, then decode those bytes as UTF-8.
+ * Returns null when that isn't possible, so genuine non-Latin text (any
+ * character outside Latin-1) is never touched. */
+function repairMojibake(text) {
+  const bytes = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code > 255) return null;
+    bytes[i] = code;
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (e) {
+    return null;
+  }
+}
+
+function decodeCsvBuffer(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  let text;
+  let note = "";
+  try {
+    /* Strict UTF-8: throws on any byte that isn't valid UTF-8, which is
+     * the surest sign the file was saved as windows-1252. */
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (e) {
+    text = new TextDecoder("windows-1252").decode(bytes);
+    note = "read as windows-1252 — accented letters restored";
+  }
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  if (MOJIBAKE.test(text)) {
+    const repaired = repairMojibake(text);
+    if (repaired && !MOJIBAKE.test(repaired)) {
+      text = repaired;
+      note = note ? `${note} (and repaired twice-encoded text)` : "repaired twice-encoded text";
+    }
+  }
+  return { text, note };
+}
+
+function handleCsvText(text, fileName, encodingNote) {
   const parsed = Papa.parse(text, {
     header: true, skipEmptyLines: false, trimHeaders: true,
     transformHeader: (h) => h.replace(/^\uFEFF/, "").trim(),
@@ -261,7 +312,7 @@ function handleCsvText(text, fileName) {
     });
   }
   renderMapping();
-  updateFileStatus(fileName, rows.length);
+  updateFileStatus(fileName, rows.length, encodingNote);
   renderAll();
 }
 
@@ -760,10 +811,11 @@ function renderAll() {
 /* =====================================================================
  *  Events & wiring
  * ===================================================================== */
-function updateFileStatus(fileName, count) {
+function updateFileStatus(fileName, count, note) {
   const s = $("#fileStatus");
   s.hidden = false;
-  $("#fileStatusText").textContent = `✓ ${fileName} — ${count} pupils loaded`;
+  $("#fileStatusText").textContent =
+    `✓ ${fileName} — ${count} pupils loaded${note ? ` · ${note}` : ""}`;
   $("#mappingSection").hidden = false;
   $("#uploadError").hidden = true;
 }
@@ -989,9 +1041,14 @@ function readFile(f) {
     return;
   }
   const reader = new FileReader();
-  reader.onload = () => handleCsvText(reader.result, f.name);
+  reader.onload = () => {
+    const { text, note } = decodeCsvBuffer(reader.result);
+    handleCsvText(text, f.name, note);
+  };
   reader.onerror = () => showUploadError("Could not read that file.");
-  reader.readAsText(f);
+  /* Read bytes, not text: only the raw bytes tell us which encoding the
+   * spreadsheet used. */
+  reader.readAsArrayBuffer(f);
 }
 
 /* =====================================================================
