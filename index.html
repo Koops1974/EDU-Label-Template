@@ -3,9 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Label Maker for Schools</title>
-<meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
-<link rel="stylesheet" href="styles.css?v=9">
+<title>Label Maker for Schools — Free name &amp; subject stickers for workbooks</title>
+<meta name="description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks. A4 label sheets ready at 100% scale.">
+<link rel="canonical" href="https://labels.welwyntech.co.uk/">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0b1b3a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Label Maker for Schools">
+<meta property="og:title" content="Label Maker for Schools — Free name &amp; subject stickers for workbooks">
+<meta property="og:description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
+<meta property="og:url" content="https://labels.welwyntech.co.uk/">
+<meta property="og:image" content="https://labels.welwyntech.co.uk/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="en_GB">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Label Maker for Schools — Free name &amp; subject stickers for workbooks">
+<meta name="twitter:description" content="Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.">
+<meta name="twitter:image" content="https://labels.welwyntech.co.uk/assets/og-image.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Label Maker for Schools",
+  "url": "https://labels.welwyntech.co.uk/",
+  "description": "Free, GDPR-friendly label generator for schools. Upload a pupil CSV locally and print subject/name stickers for workbooks.",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Any web browser",
+  "browserRequirements": "Requires JavaScript",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
+  "featureList": [
+    "Drag-and-drop CSV upload",
+    "A4 label sheet templates",
+    "Colour-coded text from CSV columns",
+    "School branding and logo",
+    "100% client-side, GDPR-friendly"
+  ],
+  "publisher": { "@type": "Organization", "name": "Label Maker for Schools" }
+}
+</script>
+
+<link rel="stylesheet" href="styles.css?v=10">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -79,6 +120,7 @@
         <span id="fileStatusText"></span>
         <button class="btn-ghost btn-sm" id="clearFileBtn" type="button">Remove</button>
       </div>
+      <p class="skipped-note" id="skippedNote" hidden></p>
     </section>
 
     <!-- Step 2 · Map columns -->
@@ -274,7 +316,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");
