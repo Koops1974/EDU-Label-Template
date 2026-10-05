@@ -98,6 +98,7 @@ const state = {
   rows: [],
   rowNumbers: [],
   skippedRows: [],
+  partialNameRows: [],
   mapping: { firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null, colour: null },
   sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
@@ -205,11 +206,16 @@ function handleCsvText(text, fileName) {
     header: true, skipEmptyLines: false, trimHeaders: true,
     transformHeader: (h) => h.replace(/^\uFEFF/, "").trim(),
   });
-  /* Ragged rows (a missing column here and there) only produce
-   * TooFewFields/TooManyFields warnings — the row is still usable with the
-   * absent cells blank. Only genuinely broken quotes/structure are fatal. */
+  /* Benign parse notes we must not reject the file for:
+   * TooFewFields / TooManyFields — a ragged row, the absent cells are just
+   *   blank and the row is still usable;
+   * UndetectableDelimiter — Papa only warns when it can't sniff the
+   *   delimiter from a short file and falls back to a comma, which is what
+   *   we want anyway. Only broken quotes/structure are fatal. */
   const fatal = (parsed.errors || []).filter(
-    (e) => e.code !== "TooFewFields" && e.code !== "TooManyFields"
+    (e) => e.code !== "TooFewFields" &&
+           e.code !== "TooManyFields" &&
+           e.code !== "UndetectableDelimiter"
   );
   if (fatal.length) {
     showUploadError("Could not read that file: " + fatal[0].message);
@@ -235,10 +241,25 @@ function handleCsvText(text, fileName) {
   state.rowNumbers = rowNumbers;
   autoMap();
   /* Rows with no usable pupil name are dropped when "Skip empty pupil
-   * names" is on — list them so the spreadsheet can be fixed. */
-  state.skippedRows = rows
-    .map((r, i) => (fullName(r) === "" ? rowNumbers[i] : null))
-    .filter((n) => n !== null);
+   * names" is on — list them so the spreadsheet can be fixed. A row with
+   * only one of the two name columns filled still gets a label, but the
+   * teacher should know about it before burning a label sheet. */
+  state.skippedRows = [];
+  state.partialNameRows = [];
+  const firstCol = state.mapping.firstName && state.mapping.firstName.kind === "col" ? state.mapping.firstName.value : null;
+  const lastCol = state.mapping.lastName && state.mapping.lastName.kind === "col" ? state.mapping.lastName.value : null;
+  if (firstCol && lastCol) {
+    rows.forEach((r, i) => {
+      const f = r[firstCol] == null ? "" : String(r[firstCol]).trim();
+      const l = r[lastCol] == null ? "" : String(r[lastCol]).trim();
+      if (!f && !l) state.skippedRows.push(rowNumbers[i]);
+      else if (!f || !l) state.partialNameRows.push(rowNumbers[i]);
+    });
+  } else {
+    rows.forEach((r, i) => {
+      if (fullName(r) === "") state.skippedRows.push(rowNumbers[i]);
+    });
+  }
   renderMapping();
   updateFileStatus(fileName, rows.length);
   renderAll();
@@ -690,26 +711,39 @@ function printCalibrationSheet() {
   window.print();
 }
 
-/* Tell the teacher exactly which spreadsheet rows we could not use, so
- * they can fix the file instead of wondering why labels are missing. */
+/* Tell the teacher exactly which spreadsheet rows need attention, so they
+ * can fix the file instead of wondering why labels are missing. */
+const rowList = (nums) => {
+  const max = 12;
+  const listed = nums.slice(0, max).join(", ");
+  return listed + (nums.length > max ? ` and ${nums.length - max} more` : "");
+};
+
 function updateSkippedNote() {
   const el = $("#skippedNote");
   if (!el) return;
+  const lines = [];
   const skipped = state.opts.skipBlanks ? (state.skippedRows || []) : [];
-  if (!skipped.length) {
-    el.hidden = true;
-    el.textContent = "";
-    return;
+  const partial = state.partialNameRows || [];
+
+  if (skipped.length) {
+    const many = skipped.length === 1;
+    lines.push(
+      `${skipped.length} ${many ? "row has" : "rows have"} no pupil name ` +
+      `(row${many ? "" : "s"} ${rowList(skipped)}) so no label was made for ` +
+      `${many ? "it" : "them"}. Add the missing name${many ? "" : "s"} in your spreadsheet and upload the file again.`
+    );
   }
-  const max = 12;
-  const listed = skipped.slice(0, max).join(", ");
-  const more = skipped.length > max ? ` and ${skipped.length - max} more` : "";
-  el.hidden = false;
-  el.textContent =
-    `⚠ ${skipped.length} ${skipped.length === 1 ? "row has" : "rows have"} no pupil name ` +
-    `(row${skipped.length === 1 ? "" : "s"} ${listed}${more}) so no label was made for ` +
-    `${skipped.length === 1 ? "it" : "them"}. Add the missing name${skipped.length === 1 ? "" : "s"} ` +
-    `in your spreadsheet and upload the file again.`;
+  if (partial.length) {
+    const many = partial.length === 1;
+    lines.push(
+      `${partial.length} ${many ? "row has" : "rows have"} only a first or last name ` +
+      `(row${many ? "" : "s"} ${rowList(partial)}) — a label was still made, so check those cells before printing.`
+    );
+  }
+
+  el.hidden = !lines.length;
+  el.textContent = lines.length ? "⚠ " + lines.join("\n⚠ ") : "";
 }
 
 function renderAll() {
@@ -759,7 +793,7 @@ function initEvents() {
 
   $("#clearFileBtn").addEventListener("click", () => {
     state.columns = []; state.rows = [];
-    state.rowNumbers = []; state.skippedRows = [];
+    state.rowNumbers = []; state.skippedRows = []; state.partialNameRows = [];
     state.mapping = {};
     state.sort = "none";
     if (sortSelect) sortSelect.value = "none";

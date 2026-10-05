@@ -227,8 +227,33 @@ const note = elCache["#skippedNote"];
 check(note.hidden === false && note.textContent.includes("rows 3, 9"), "notice names the skipped rows: " + note.textContent.slice(0, 52));
 state.opts.skipBlanks = false;
 __app.updateSkippedNote();
-check(elCache["#skippedNote"].hidden === true, "notice hidden when 'Skip empty pupil names' is off");
+const offNote = elCache["#skippedNote"];
+check(offNote.hidden === false && !offNote.textContent.includes("no pupil name"),
+  "with 'Skip empty pupil names' off the skipped line goes but the partial-name check stays");
+check(offNote.textContent.includes("row 4"), "row 4 (Ben, no surname) still flagged while the option is off");
 state.opts.skipBlanks = true;
+
+console.log("Partial-name warning (only first or only last name):");
+const partialCsv = [
+  "First Name,Last Name,Subject",  // row 1 (header)
+  "Ana,Þórsdóttir,Maths",          // row 2 — complete, silent
+  ",Smith,English",                // row 3 — no first name → flagged
+  "Ben,,Art",                      // row 4 — no last name → flagged
+  "Cara,O'Neill,History",          // row 5 — complete, silent
+  ",,Physics",                     // row 6 — no name at all → skipped
+].join("\n");
+__app.handleCsvText(partialCsv, "partial.csv");
+check(JSON.stringify(state.skippedRows) === "[6]", "only row 6 has no name at all: " + JSON.stringify(state.skippedRows));
+check(JSON.stringify(state.partialNameRows) === "[3,4]", "rows 3 and 4 flagged as partial names: " + JSON.stringify(state.partialNameRows));
+__app.updateSkippedNote();
+const pnote = elCache["#skippedNote"].textContent;
+check(pnote.includes("rows 3, 4") && pnote.includes("only a first or last name"), "notice reports the partial rows");
+check(pnote.includes("row 6"), "notice still reports the fully-blank row: " + pnote.split("\n")[0].slice(0, 48));
+check(__app.planFills().fills.length === 4, "4 labels made (row 6 skipped, rows 3 and 4 keep their partial name)");
+// A CSV with a single full-name column must NOT raise partial-name noise.
+__app.handleCsvText("Pupil Name,Subject\nCher,Music\nMadonna,Art\n", "single.csv");
+check(state.partialNameRows.length === 0, "no partial-name warnings for a single full-name column");
+check(state.skippedRows.length === 0, "no skipped rows for a single full-name column");
 
 __app.handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
 check(state.rows.length === 16, "sample CSV still loads all 16 pupils");
