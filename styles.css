@@ -319,6 +319,13 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .how-list li { margin: 4px 0; }
 .print-note { font-size: 12px; color: var(--muted); text-align: center; margin: 10px 0 0; }
 
+/* Skipped-row notice (rows with no pupil name) */
+.skipped-note {
+  margin: 10px 0 0; padding: 10px 13px; border-radius: 10px;
+  background: #fff8e6; border: 1px solid #f5d98b; color: #8a5a00;
+  font-size: 12.5px; line-height: 1.5;
+}
+
 /* ---------- Privacy strip ---------- */
 .privacy-strip {
   margin-top: 14px; padding: 10px 13px; border-radius: 10px;

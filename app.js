@@ -96,6 +96,8 @@ const effectiveBarColor = () => readStoredColor() || SCHOOL_CONFIG.primaryColor;
 const state = {
   columns: [],
   rows: [],
+  rowNumbers: [],
+  skippedRows: [],
   mapping: { firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null, colour: null },
   sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
@@ -200,21 +202,43 @@ function renderTemplateList() {
  * ===================================================================== */
 function handleCsvText(text, fileName) {
   const parsed = Papa.parse(text, {
-    header: true, skipEmptyLines: "greedy", trimHeaders: true,
+    header: true, skipEmptyLines: false, trimHeaders: true,
     transformHeader: (h) => h.replace(/^\uFEFF/, "").trim(),
   });
-  if (parsed.errors && parsed.errors.length) {
-    showUploadError("Could not read that file: " + parsed.errors[0].message);
+  /* Ragged rows (a missing column here and there) only produce
+   * TooFewFields/TooManyFields warnings — the row is still usable with the
+   * absent cells blank. Only genuinely broken quotes/structure are fatal. */
+  const fatal = (parsed.errors || []).filter(
+    (e) => e.code !== "TooFewFields" && e.code !== "TooManyFields"
+  );
+  if (fatal.length) {
+    showUploadError("Could not read that file: " + fatal[0].message);
     return;
   }
-  const rows = parsed.data.filter((r) => r && Object.keys(r).length > 0);
+  /* Keep the original spreadsheet row number for every pupil row (the
+   * header occupies row 1), so rows we can't use can be reported back to
+   * the teacher by row number instead of vanishing silently. */
+  const rows = [], rowNumbers = [];
+  parsed.data.forEach((r, i) => {
+    if (!r) return;
+    const values = Object.keys(r).map((k) => (r[k] == null ? "" : String(r[k]).trim()));
+    if (values.every((v) => v === "")) return; // genuinely blank line
+    rows.push(r);
+    rowNumbers.push(i + 2);
+  });
   if (!rows.length) {
     showUploadError("The CSV has no data rows.");
     return;
   }
   state.columns = parsed.meta.fields.filter(Boolean);
   state.rows = rows;
+  state.rowNumbers = rowNumbers;
   autoMap();
+  /* Rows with no usable pupil name are dropped when "Skip empty pupil
+   * names" is on — list them so the spreadsheet can be fixed. */
+  state.skippedRows = rows
+    .map((r, i) => (fullName(r) === "" ? rowNumbers[i] : null))
+    .filter((n) => n !== null);
   renderMapping();
   updateFileStatus(fileName, rows.length);
   renderAll();
@@ -666,7 +690,30 @@ function printCalibrationSheet() {
   window.print();
 }
 
+/* Tell the teacher exactly which spreadsheet rows we could not use, so
+ * they can fix the file instead of wondering why labels are missing. */
+function updateSkippedNote() {
+  const el = $("#skippedNote");
+  if (!el) return;
+  const skipped = state.opts.skipBlanks ? (state.skippedRows || []) : [];
+  if (!skipped.length) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  const max = 12;
+  const listed = skipped.slice(0, max).join(", ");
+  const more = skipped.length > max ? ` and ${skipped.length - max} more` : "";
+  el.hidden = false;
+  el.textContent =
+    `⚠ ${skipped.length} ${skipped.length === 1 ? "row has" : "rows have"} no pupil name ` +
+    `(row${skipped.length === 1 ? "" : "s"} ${listed}${more}) so no label was made for ` +
+    `${skipped.length === 1 ? "it" : "them"}. Add the missing name${skipped.length === 1 ? "" : "s"} ` +
+    `in your spreadsheet and upload the file again.`;
+}
+
 function renderAll() {
+  updateSkippedNote();
   renderPreview();
   renderPrintRoot();
   const hasData = state.rows.length > 0;
@@ -712,6 +759,7 @@ function initEvents() {
 
   $("#clearFileBtn").addEventListener("click", () => {
     state.columns = []; state.rows = [];
+    state.rowNumbers = []; state.skippedRows = [];
     state.mapping = {};
     state.sort = "none";
     if (sortSelect) sortSelect.value = "none";

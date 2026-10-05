@@ -6,12 +6,20 @@ const fs = require("fs");
 const path = require("path");
 
 // --- minimal DOM stubs so app.js can load ---
-global.window = { addEventListener() {}, print() {} };
+const makeEl = () => ({
+  style: {}, dataset: {}, hidden: false, textContent: "", value: "", disabled: false,
+  firstChild: null, className: "",
+  classList: { add() {}, remove() {}, toggle() {} },
+  appendChild() {}, removeChild() {}, addEventListener() {}, removeEventListener() {},
+  setAttribute() {}, querySelector: () => makeEl(), querySelectorAll: () => [],
+});
+const elCache = {};
+global.window = { addEventListener() {}, print() {}, removeEventListener() {} };
 global.document = {
   addEventListener() {},
-  querySelector: () => ({ style: {} }),
+  querySelector: (sel) => (elCache[sel] = elCache[sel] || makeEl()),
   querySelectorAll: () => [],
-  createElement: () => ({ style: {}, classList: { add() {} }, addEventListener() {}, appendChild() {} }),
+  createElement: () => makeEl(),
   documentElement: { style: { setProperty() {} } },
   title: "",
   body: { appendChild() {} },
@@ -22,13 +30,8 @@ global.localStorage = {
   setItem(k, v) { this._s[k] = String(v); },
   removeItem(k) { delete this._s[k]; },
 };
-global.Papa = {
-  parse: () => ({
-    data: [],
-    errors: [],
-    meta: { fields: [] },
-  }),
-};
+// Use the real vendored Papa Parse so CSV handling is genuinely exercised.
+global.Papa = require(path.join(__dirname, "lib/papaparse.min.js"));
 
 // SCHOOL_CONFIG comes from config.js
 const configSrc = fs.readFileSync(path.join(__dirname, "config.js"), "utf8")
@@ -42,7 +45,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote };"
   );
 eval(appSrc);
 
@@ -198,6 +201,38 @@ const allSheet = __app.buildSheets(false)[0];
 check(allSheet.includes('label-inner classic color" style="color:#1d4ed8;'), "colour targets whole label text when selected");
 state.opts.colourField = "name";
 state.opts.colourCode = false;
+
+console.log("Skipped-row reporting (rows with no pupil name):");
+state.opts.skipBlanks = true;
+const messyCsv = [
+  "First Name,Last Name,Subject",   // spreadsheet row 1 (header)
+  "Ana,Þórsdóttir,Maths",           // row 2 — accented name, kept
+  ",  ,English",                    // row 3 — subject but no name, skipped
+  "Ben,,Art",                       // row 4 — no subject, kept
+  "",                               // row 5 — blank line, ignored silently
+  "Cara,\"O'Neill, Sr\",History",    // row 6 — quoted comma, kept
+  "   ,   ,   ",                   // row 7 — whitespace only, ignored
+  "Dan,Ng,Physics",                 // row 8 — kept
+  ",  ,History",                    // row 9 — no name, skipped
+].join("\n");
+__app.handleCsvText(messyCsv, "messy.csv");
+check(state.rows.length === 6, "6 data rows kept (rows 2, 3, 4, 6, 8, 9)");
+check(JSON.stringify(state.rowNumbers) === "[2,3,4,6,8,9]", "spreadsheet row numbers tracked: " + JSON.stringify(state.rowNumbers));
+check(JSON.stringify(state.skippedRows) === "[3,9]", "rows 3 and 9 reported as skipped: " + JSON.stringify(state.skippedRows));
+check(state.rows[0]["First Name"] === "Ana" && state.rows[0]["Last Name"] === "Þórsdóttir", "accented name parsed intact");
+check(state.rows[3]["Last Name"] === "O'Neill, Sr", "quoted comma parsed as one value: " + state.rows[3]["Last Name"]);
+check(__app.planFills().fills.length === 4, "4 labels made from the 6 rows (rows 3 and 9 skipped)");
+__app.updateSkippedNote();
+const note = elCache["#skippedNote"];
+check(note.hidden === false && note.textContent.includes("rows 3, 9"), "notice names the skipped rows: " + note.textContent.slice(0, 52));
+state.opts.skipBlanks = false;
+__app.updateSkippedNote();
+check(elCache["#skippedNote"].hidden === true, "notice hidden when 'Skip empty pupil names' is off");
+state.opts.skipBlanks = true;
+
+__app.handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
+check(state.rows.length === 16, "sample CSV still loads all 16 pupils");
+check(state.skippedRows.length === 0, "sample CSV reports no skipped rows");
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);
