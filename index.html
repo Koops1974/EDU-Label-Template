@@ -108,17 +108,38 @@
         <h3 class="step-title">Add pupils</h3>
       </div>
 
-      <div class="upload-area" id="dropZone">
-        <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
-        <div class="upload-icon">📄</div>
-        <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
-        <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
-        <p class="upload-error" id="uploadError" hidden></p>
+      <div class="source-tabs" role="tablist" aria-label="How to add pupils">
+        <button class="source-tab is-active" id="tabUpload" type="button" role="tab"
+                aria-selected="true" aria-controls="uploadSource">Upload a CSV</button>
+        <button class="source-tab" id="tabPaste" type="button" role="tab"
+                aria-selected="false" aria-controls="pasteSource">Paste a list of names</button>
       </div>
 
-      <div class="sample-row">
-        <button class="btn-soft btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
-        <a class="btn-soft btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
+      <div id="uploadSource" role="tabpanel" aria-labelledby="tabUpload">
+        <div class="upload-area" id="dropZone">
+          <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
+          <div class="upload-icon">📄</div>
+          <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
+          <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
+          <p class="upload-error" id="uploadError" hidden></p>
+        </div>
+
+        <div class="sample-row">
+          <button class="btn-soft btn-sm" id="loadSampleBtn" type="button">Load sample CSV</button>
+          <a class="btn-soft btn-sm download-link" href="sample-pupils.csv" download="sample-pupils.csv">⬇️ Download template (.csv)</a>
+        </div>
+      </div>
+
+      <div id="pasteSource" role="tabpanel" aria-labelledby="tabPaste" hidden>
+        <textarea id="pasteList" class="paste-box" rows="7" spellcheck="false"
+                  aria-label="Names to print, one per line"
+                  placeholder="John Smith&#10;Sarah Jones&#10;David Brown&#10;Emily Wilson"></textarea>
+        <p class="upload-hint">One name per line — no CSV needed. Pasting from Excel? Tab-separated cells become separate columns.</p>
+        <div class="paste-actions">
+          <button class="btn-soft btn-sm" id="pasteGo" type="button">Make labels</button>
+          <span class="paste-hint" id="pasteHint" hidden></span>
+        </div>
+        <p class="upload-error" id="pasteError" hidden></p>
       </div>
 
       <div id="fileStatus" class="file-status" hidden>
