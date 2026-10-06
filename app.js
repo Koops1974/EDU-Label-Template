@@ -252,7 +252,62 @@ function decodeCsvBuffer(buffer) {
   return { text, note };
 }
 
-function handleCsvText(text, fileName, encodingNote) {
+/* A teacher who wants 20 labels should not have to know what a CSV is.
+ * Turn a pasted list into the same CSV shape the rest of the app already
+ * understands, so preview, sorting, templates and printing stay identical.
+ * Returns { csv, rowOffset } — rowOffset keeps reported row numbers
+ * pointing at the teacher's own line numbering, not ours. */
+const HEADING_CELLS = [
+  "name", "pupil name", "student name", "child name", "full name", "display name",
+  "first name", "firstname", "last name", "surname", "forename", "given name",
+  "subject", "class", "class form", "form", "year", "year group", "group",
+  "colour", "color", "school",
+];
+const isHeadingCell = (cell) =>
+  HEADING_CELLS.includes(cell.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim());
+
+const csvCell = (v) => {
+  const s = String(v).replace(/^\uFEFF/, "").trim();
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+function pastedToCsv(text) {
+  const lines = String(text == null ? "" : text)
+    .replace(/\r\n?/g, "\n").split("\n")
+    .map((l) => l.replace(/^\uFEFF/, "").trim()).filter((l) => l !== "");
+  if (!lines.length) return null;
+
+  const cellsOf = (l) => l.split("\t").map((c) => c.trim());
+  /* Copying a range straight from a spreadsheet brings the heading row
+   * along — drop it rather than print a label called "First Name". */
+  const headerDropped = cellsOf(lines[0]).every(isHeadingCell);
+  const body = headerDropped ? lines.slice(1) : lines;
+  if (!body.length) return null;
+
+  /* Tab-separated cells (an Excel/Sheets paste) become real columns;
+   * otherwise every line is simply one full name. */
+  if (!body.some((l) => l.includes("\t"))) {
+    return {
+      csv: ["Pupil Name"].concat(body.map(csvCell)).join("\n"),
+      rowOffset: headerDropped ? 0 : 1,
+    };
+  }
+
+  const names = ["First Name", "Last Name", "Subject", "Class / form", "Year group", "Colour"];
+  const width = Math.max.apply(null, body.map((l) => cellsOf(l).length));
+  const head = [];
+  for (let i = 0; i < width; i++) head.push(names[i] || "Column " + (i + 1));
+  const csv = [head.map(csvCell).join(",")].concat(
+    body.map((l) => {
+      const c = cellsOf(l);
+      while (c.length < width) c.push("");
+      return c.map(csvCell).join(",");
+    })
+  ).join("\n");
+  return { csv, rowOffset: headerDropped ? 0 : 1 };
+}
+
+function handleCsvText(text, fileName, encodingNote, rowOffset) {
   const parsed = Papa.parse(text, {
     header: true, skipEmptyLines: false, trimHeaders: true,
     transformHeader: (h) => h.replace(/^\uFEFF/, "").trim(),
@@ -274,14 +329,15 @@ function handleCsvText(text, fileName, encodingNote) {
   }
   /* Keep the original spreadsheet row number for every pupil row (the
    * header occupies row 1), so rows we can't use can be reported back to
-   * the teacher by row number instead of vanishing silently. */
+   * the teacher by row number instead of vanishing silently. A pasted
+   * list passes rowOffset so the number is the line they see in the box. */
   const rows = [], rowNumbers = [];
   parsed.data.forEach((r, i) => {
     if (!r) return;
     const values = Object.keys(r).map((k) => (r[k] == null ? "" : String(r[k]).trim()));
     if (values.every((v) => v === "")) return; // genuinely blank line
     rows.push(r);
-    rowNumbers.push(i + 2);
+    rowNumbers.push(i + 2 - (rowOffset || 0));
   });
   if (!rows.length) {
     showUploadError("The CSV has no data rows.");
@@ -317,9 +373,12 @@ function handleCsvText(text, fileName, encodingNote) {
 }
 
 function showUploadError(msg) {
-  const el = $("#uploadError");
-  el.textContent = "⚠ " + msg;
-  el.hidden = false;
+  const text = "⚠ " + msg;
+  const up = $("#uploadError");
+  if (up) { up.textContent = text; up.hidden = false; }
+  /* Surface the same message in whichever source tab is open. */
+  const paste = $("#pasteError");
+  if (paste) { paste.textContent = text; paste.hidden = false; }
 }
 
 function autoMap() {
@@ -818,6 +877,8 @@ function updateFileStatus(fileName, count, note) {
     `✓ ${fileName} — ${count} pupils loaded${note ? ` · ${note}` : ""}`;
   $("#mappingSection").hidden = false;
   $("#uploadError").hidden = true;
+  const pasteErr = $("#pasteError");
+  if (pasteErr) pasteErr.hidden = true;
 }
 
 function initEvents() {
@@ -851,6 +912,8 @@ function initEvents() {
     if (sortSelect) sortSelect.value = "none";
     $("#fileStatus").hidden = true;
     $("#mappingSection").hidden = true;
+    const pasteHint = $("#pasteHint");
+    if (pasteHint) pasteHint.hidden = true;
     renderMapping();
     renderAll();
   });
@@ -859,7 +922,65 @@ function initEvents() {
     handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
   });
 
+  /* --- Paste-a-list mode (the no-CSV path) --- */
+  const setSourceTab = (which) => {
+    const upload = which === "upload";
+    $("#tabUpload").classList.toggle("is-active", upload);
+    $("#tabPaste").classList.toggle("is-active", !upload);
+    $("#tabUpload").setAttribute("aria-selected", String(upload));
+    $("#tabPaste").setAttribute("aria-selected", String(!upload));
+    $("#uploadSource").hidden = !upload;
+    $("#pasteSource").hidden = upload;
+    if (upload) $("#uploadError").hidden = true;
+    else $("#pasteError").hidden = true;
+  };
+  $("#tabUpload").addEventListener("click", () => setSourceTab("upload"));
+  $("#tabPaste").addEventListener("click", () => setSourceTab("paste"));
+
+  const makeFromPaste = () => {
+    const built = pastedToCsv($("#pasteList").value);
+    if (!built) {
+      const el = $("#pasteError");
+      el.textContent = "⚠ Paste at least one name to make labels.";
+      el.hidden = false;
+      return;
+    }
+    handleCsvText(built.csv, "Pasted list", "", built.rowOffset);
+    const hint = $("#pasteHint");
+    /* On failure handleCsvText stops and leaves the previous list alone. */
+    if (!$("#pasteError").hidden) { hint.hidden = true; return; }
+    hint.hidden = false;
+    hint.textContent = `${state.rows.length} names ready — edit the box and press Make labels again to update.`;
+  };
+  $("#pasteGo").addEventListener("click", makeFromPaste);
+  $("#pasteList").addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") makeFromPaste();
+  });
+
   $("#printBtn").addEventListener("click", () => window.print());
+
+  /* Share this site: native share sheet where supported, otherwise copy
+   * the link and confirm, falling back to a copy dialog on file:// pages. */
+  const shareBtn = $("#shareSiteBtn");
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const url = "https://labels.welwyntech.co.uk/";
+      const label = shareBtn.dataset.label || "Share this site";
+      if (navigator.share) {
+        try { await navigator.share({ title: SCHOOL_CONFIG.schoolName + " Label Maker", text: "Free label maker for schools", url }); }
+        catch (e) { /* user cancelled the sheet — fine */ }
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        shareBtn.textContent = "✓ Link copied";
+        setTimeout(() => { shareBtn.textContent = label; }, 2000);
+      } catch (e) {
+        const done = prompt("Copy this link:", url);
+        if (done !== null && done !== "") shareBtn.textContent = "✓ Link copied";
+      }
+    });
+  }
 
   state.columns = [];
   ["optSchoolTop", "optClassName", "optSubject", "optYearGroup",

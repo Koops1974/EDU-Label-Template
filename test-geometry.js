@@ -45,7 +45,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
   );
 eval(appSrc);
 
@@ -254,6 +254,38 @@ check(__app.planFills().fills.length === 4, "4 labels made (row 6 skipped, rows 
 __app.handleCsvText("Pupil Name,Subject\nCher,Music\nMadonna,Art\n", "single.csv");
 check(state.partialNameRows.length === 0, "no partial-name warnings for a single full-name column");
 check(state.skippedRows.length === 0, "no skipped rows for a single full-name column");
+
+console.log("Paste-a-list (no CSV needed):");
+const pasted = __app.pastedToCsv("John Smith\nSarah Jones\n\nDavid Brown\nEmily Wilson\n");
+check(pasted !== null && pasted.rowOffset === 1, "plain list builds CSV with rowOffset 1: " + JSON.stringify(pasted));
+const pLines = pasted.csv.split("\n");
+check(pLines[0] === "Pupil Name", "plain list uses a single full-name column");
+check(pLines.slice(1).join("|") === "John Smith|Sarah Jones|David Brown|Emily Wilson", "names kept in order, blank lines dropped");
+__app.handleCsvText(pasted.csv, "Pasted list");
+check(state.rows.length === 4 && state.partialNameRows.length === 0, "4 pupils from a plain list, no partial warnings");
+check(state.rows.map((r) => __app.fullName(r)).join("|") === "John Smith|Sarah Jones|David Brown|Emily Wilson", "all four names appear on the labels");
+
+const comma = __app.pastedToCsv("Rollins, Sonny\nD'Artagnan\n");
+check(comma.csv.split("\n")[1] === '"Rollins, Sonny"', "a comma in a name is quoted, not treated as a column: " + comma.csv.split("\n")[1]);
+
+// Pasting tab-separated cells from Excel: columns land in first/last/subject.
+const tabs = __app.pastedToCsv("John\tSmith\tMaths\nSarah\t\tArt\n");
+check(tabs.rowOffset === 1, "tab paste with no heading keeps line numbering (offset 1)");
+check(tabs.csv.split("\n")[0] === "First Name,Last Name,Subject", "tab cells become first/last/subject columns: " + tabs.csv.split("\n")[0]);
+__app.handleCsvText(tabs.csv, "Pasted list", "", tabs.rowOffset);
+check(state.rows.length === 2, "two pupils from tab paste");
+check(__app.fullName(state.rows[0]) === "John Smith" && __app.fieldValue(state.rows[0], "subject") === "Maths", "tab row: John Smith, Maths");
+check(JSON.stringify(state.partialNameRows) === "[2]", "pasted line 2 (missing surname) reported as row 2: " + JSON.stringify(state.partialNameRows));
+
+// Copying a whole range from a spreadsheet includes its heading row.
+const headed = __app.pastedToCsv("First Name\tLast Name\tSubject\nJohn\tSmith\tMaths\nSarah\t\tArt\n");
+check(headed.rowOffset === 0, "spreadsheet heading row dropped, row numbers start at the first name");
+__app.handleCsvText(headed.csv, "Pasted list", "", headed.rowOffset);
+check(state.rows.length === 2, "heading row is consumed, not printed");
+check(JSON.stringify(state.partialNameRows) === "[3]", "pasted line 3 (missing surname) still reported correctly: " + JSON.stringify(state.partialNameRows));
+
+// Nothing pasted at all → friendly null, not a silent empty sheet.
+check(__app.pastedToCsv("   \n\t\n") === null, "whitespace-only paste returns nothing to do");
 
 __app.handleCsvText(SAMPLE_CSV, "sample-pupils.csv");
 check(state.rows.length === 16, "sample CSV still loads all 16 pupils");
