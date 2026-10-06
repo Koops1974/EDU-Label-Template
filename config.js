@@ -11,7 +11,7 @@ const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
    *  1. TOOL TITLE & SCHOOL BRANDING
    * ---------------------------------------------------------------- */
-  appTitle: "Label Maker for Schools", // Shown in the page header / tab title
+  appTitle: "Free Label Maker for Schools", // Shown in the page header / tab title
   schoolName: "My School Name",          // Full school name printed on each label
   shortName: "My School",                // Used where there is less space
   logoText: "ALM",                       // 2-4 letter monogram shown if no logo image is set
@@ -63,7 +63,7 @@ const SCHOOL_CONFIG = {
   /* ------------------------------------------------------------------
    *  4. FOOTER / EXTRA TEXT
    * ---------------------------------------------------------------- */
-  footerLine: "Label Maker for Schools — free, open source, GDPR-friendly",
+  footerLine: "Free label maker for schools — open source, pupil data never leaves the device",
   contactEmail: "",                      // Shown on the footer line if set, e.g. "admin@school.org"
 
   /* ------------------------------------------------------------------

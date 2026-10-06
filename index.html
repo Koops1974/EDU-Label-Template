@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Free label maker for schools — exercise book, folder &amp; equipment labels</title>
-<meta name="description" content="Free, GDPR-friendly label maker for schools. Upload a pupil CSV locally and print exercise book, folder, library and equipment labels on A4 Avery sheets.">
+<title>Free Label Maker for Schools | Print Pupil &amp; Book Labels</title>
+<meta name="description" content="Free label maker for schools and teachers. Create and print pupil name labels, exercise book labels and classroom labels in your browser — no login required.">
 <link rel="canonical" href="https://labels.welwyntech.co.uk/">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#0b1b3a">
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Label Maker for Schools">
-<meta property="og:title" content="Free label maker for schools — exercise book, folder &amp; equipment labels">
-<meta property="og:description" content="Free, GDPR-friendly label maker for schools. Upload a pupil CSV locally and print exercise book, subject, folder, library, Chromebook and equipment labels on A4 Avery sheets.">
+<meta property="og:title" content="Free Label Maker for Schools | Print Pupil &amp; Book Labels">
+<meta property="og:description" content="Free label maker for schools and teachers. Create and print pupil name labels, exercise book labels and classroom labels in your browser — no login required.">
 <meta property="og:url" content="https://labels.welwyntech.co.uk/">
 <meta property="og:image" content="https://labels.welwyntech.co.uk/assets/og-image.png">
 <meta property="og:image:width" content="1200">
@@ -20,8 +20,8 @@
 <meta property="og:locale" content="en_GB">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Free label maker for schools — exercise book, folder &amp; equipment labels">
-<meta name="twitter:description" content="Free, GDPR-friendly label maker for schools. Upload a pupil CSV locally and print exercise book, folder, library and equipment labels on A4 Avery sheets.">
+<meta name="twitter:title" content="Free Label Maker for Schools | Print Pupil &amp; Book Labels">
+<meta name="twitter:description" content="Free label maker for schools and teachers. Create and print pupil name labels, exercise book labels and classroom labels in your browser — no login required.">
 <meta name="twitter:image" content="https://labels.welwyntech.co.uk/assets/og-image.png">
 
 <script type="application/ld+json">
@@ -30,21 +30,21 @@
   "@type": "WebApplication",
   "name": "Label Maker for Schools",
   "url": "https://labels.welwyntech.co.uk/",
-  "description": "Free, GDPR-friendly label maker for schools. Upload a pupil CSV locally and print exercise book, folder, library and equipment labels on A4 Avery sheets.",
+  "description": "Free label maker for schools and teachers. Create and print pupil name labels, exercise book labels and classroom labels in your browser — no login required.",
   "applicationCategory": "EducationalApplication",
   "operatingSystem": "Any web browser",
   "browserRequirements": "Requires JavaScript",
+  "inLanguage": "en-GB",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "GBP" },
   "featureList": [
     "Exercise book and subject labels",
-    "Folder, Chromebook and equipment labels",
-    "Library and pupil name labels",
-    "Staff equipment and asset labels",
-    "Drag-and-drop CSV upload",
-    "A4 label sheet templates",
+    "Folder, library and classroom labels",
+    "Pupil name labels and staff labels",
+    "Paste a list of names, no CSV needed",
+    "A4 Avery label sheet templates",
     "Colour-coded text from CSV columns",
     "School branding and logo",
-    "100% client-side, GDPR-friendly"
+    "Pupil data never leaves the device"
   ],
   "publisher": { "@type": "Organization", "name": "Label Maker for Schools" }
 }
@@ -67,17 +67,17 @@
 <header class="app-header">
   <div class="header-inner">
     <div class="brand">
-      <img class="brand-logo" id="brandLogo" src="assets/EDU-logo.jpg?v=1" alt="EDU logo"
+      <img class="brand-logo" id="brandLogo" src="assets/EDU-logo.jpg?v=1" alt="Label Maker for Schools logo"
            onload="this.style.display='flex';document.getElementById('brandMark').style.display='none';"
            onerror="this.style.display='none';">
       <span class="brand-mark" id="brandMark" style="display:flex;">ALM</span>
       <div class="brand-text">
-        <h1 id="headerSchool" class="brand-title">Label Maker for Schools</h1>
-        <p class="brand-sub">Exercise book, folder, library &amp; equipment labels</p>
+        <h1 id="headerSchool" class="brand-title">Free Label Maker for Schools</h1>
+        <p class="brand-sub">Create printable labels for pupils, exercise books, folders and classroom equipment — all directly in your browser.</p>
       </div>
     </div>
     <nav class="header-actions" aria-label="Header actions">
-      <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Print guide</a>
+      <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Printing guide</a>
       <a class="header-link" href="feedback.html">💬 Feedback</a>
       <a class="header-link" href="https://ko-fi.com/Q2K727N8IU" target="_blank" rel="noopener">☕ Buy me a coffee</a>
       <button type="button" class="header-link" id="shareSiteBtn" data-label="Share this site">Share this site</button>
@@ -105,7 +105,7 @@
     <section class="step" aria-label="Step 1, Add pupils">
       <div class="step-head">
         <span class="step-num">1</span>
-        <h3 class="step-title">Add pupils</h3>
+        <h3 class="step-title">Add your pupil or class list</h3>
       </div>
 
       <div class="source-tabs" role="tablist" aria-label="How to add pupils">
@@ -191,7 +191,7 @@
     <section class="step" aria-label="Step 3, Choose label sheet">
       <div class="step-head">
         <span class="step-num">3</span>
-        <h3 class="step-title">Choose label sheet</h3>
+        <h3 class="step-title">Choose your label sheet</h3>
       </div>
       <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
     </section>
@@ -200,7 +200,7 @@
     <section class="step" aria-label="Step 4, Label style">
       <div class="step-head">
         <span class="step-num">4</span>
-        <h3 class="step-title">Label style</h3>
+        <h3 class="step-title">Customise your labels</h3>
       </div>
 
       <select id="layoutSelect" class="sr-only" aria-label="Label style">
@@ -296,13 +296,13 @@
       </div>
     </details>
 
-    <!-- How it works -->
+    <!-- How to make your labels -->
     <div class="about-block">
-      <h3>How it works</h3>
+      <h3>How to make your labels</h3>
       <ol class="how-list">
-        <li><strong>Download the CSV template</strong> (above) and add your pupils' names, classes and subjects.</li>
-        <li><strong>Drop the file here</strong> — your columns are mapped for you automatically.</li>
-        <li><strong>Pick your label sheet, preview,</strong> then print at 100% scale (or save as PDF).</li>
+        <li><strong>Add your pupils</strong> — paste a list of names, or download the CSV template and add names, classes and subjects.</li>
+        <li><strong>Upload the file</strong> — your columns are mapped for you automatically.</li>
+        <li><strong>Choose your label sheet, preview,</strong> then print at 100% scale, or save as a PDF.</li>
       </ol>
     </div>
 
@@ -330,8 +330,8 @@
   <!-- ================= USE CASES ================= -->
   <section class="panel use-cases" aria-labelledby="useCasesTitle">
     <div class="use-head">
-      <h2 id="useCasesTitle" class="card-title">What can I use this for?</h2>
-      <p class="card-sub">One CSV, any sheet of Avery labels — pupil names are just the start.</p>
+      <h2 id="useCasesTitle" class="card-title">What can you use the label maker for?</h2>
+      <p class="card-sub">Pupil names are just the start — teachers use the same free tool for all of these.</p>
     </div>
     <ul class="use-grid">
       <li class="use-item">
@@ -366,14 +366,39 @@
         <h3 class="use-name">Staff equipment labels</h3>
         <p class="use-desc">Laptops, keys, mugs and shared kit in the staffroom, office and prep room.</p>
       </li>
+      <li class="use-item">
+        <h3 class="use-name">Storage box labels</h3>
+        <p class="use-desc">Resource boxes, trays and stackable crates in classrooms, cupboards and stock rooms.</p>
+      </li>
+      <li class="use-item">
+        <h3 class="use-name">Stationery labels</h3>
+        <p class="use-desc">Pencil cases, scissors, glue sticks, rulers and every other item that gets left behind.</p>
+      </li>
     </ul>
-    <p class="use-foot">Same steps either way: upload the CSV, check the preview, print at 100%. No data leaves this device.</p>
+    <p class="use-foot">Same steps for any of these: add your list, check the preview, print at 100%. Nothing you add is uploaded anywhere.</p>
+  </section>
+
+  <!-- ================= PRIVACY ================= -->
+  <section class="panel use-cases" aria-labelledby="privacyTitle">
+    <div class="use-head">
+      <h2 id="privacyTitle" class="card-title">Your pupil data stays private</h2>
+    </div>
+    <p class="use-foot">Nothing you paste, type or upload is sent anywhere. The label maker runs entirely in the browser on your own device — there is no account, no upload, and no online storage of pupil names. Open the page, make your labels, and close it: the data goes with you.</p>
+  </section>
+
+  <!-- ================= PRINTING ================= -->
+  <section class="panel use-cases" aria-labelledby="printingTitle">
+    <div class="use-head">
+      <h2 id="printingTitle" class="card-title">Printing your labels</h2>
+    </div>
+    <p class="use-foot">Labels are sized for A4 Avery sheets and should be printed at <strong>100% scale</strong> with automatic scaling turned off and background graphics switched on, so the colours and alignment guides print accurately. You can also save the sheet as a PDF.</p>
+    <p class="use-foot"><a href="print-guide.html" target="_blank" rel="noopener">Printing guide for school labels</a> — the exact print settings for your browser, plus how to calibrate the print offset if the first sheet doesn't line up.</p>
   </section>
 
 </main>
 
 <footer class="app-footer">
-  <span id="footerText">Label Maker for Schools — free, open source, GDPR-friendly</span>
+  <span id="footerText">Free label maker for schools — open source, pupil data never leaves the device</span>
   <span class="footer-sep">·</span>
   <a class="footer-link" href="print-guide.html" target="_blank" rel="noopener">Print-settings guide</a>
   <span class="footer-sep">·</span>
@@ -385,7 +410,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

@@ -161,7 +161,7 @@ const LOGO_MULT = { std: 1, lg: 1.7, xl: 2.4 };
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
-  document.title = C.appTitle;
+  document.title = C.appTitle + " | Print Pupil & Book Labels";
   $("#headerSchool").textContent = C.appTitle;
   $("#footerText").textContent = C.footerLine + (C.contactEmail ? " · " + C.contactEmail : "");
   $("#footerYear").textContent = new Date().getFullYear();
