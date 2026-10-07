@@ -118,7 +118,7 @@
       <div id="uploadSource" role="tabpanel" aria-labelledby="tabUpload">
         <div class="upload-area" id="dropZone">
           <input type="file" id="csvFile" accept=".csv,text/csv,.txt" hidden>
-          <div class="upload-icon">📄</div>
+          <div class="upload-icon"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="17"/><polyline points="9 14.5 12 17.5 15 14.5"/></svg></div>
           <p class="upload-main">Drop a <strong>CSV file</strong> here<br>or <span class="linklike" id="browseBtn">browse</span></p>
           <p class="upload-hint">Tip: export from Excel / Google Sheets (plain .csv).</p>
           <p class="upload-error" id="uploadError" hidden></p>
@@ -134,7 +134,7 @@
         <textarea id="pasteList" class="paste-box" rows="7" spellcheck="false"
                   aria-label="Names to print, one per line"
                   placeholder="John Smith&#10;Sarah Jones&#10;David Brown&#10;Emily Wilson"></textarea>
-        <p class="upload-hint">One name per line — no CSV needed. Pasting from Excel? Tab-separated cells become separate columns.</p>
+        <p class="upload-hint">One name per line — no CSV needed. Pasting from Excel or Google Sheets. Tab-separated cells become separate columns.</p>
         <div class="paste-actions">
           <button class="btn-soft btn-sm" id="pasteGo" type="button">Make labels</button>
           <span class="paste-hint" id="pasteHint" hidden></span>

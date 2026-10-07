@@ -159,8 +159,11 @@ button.header-link:active { transform: translateY(1px); }
 .upload-icon {
   width: 46px; height: 46px; margin: 0 auto; border-radius: 50%;
   background: var(--blue-soft); border: 1px solid #d6e4f5;
-  display: flex; align-items: center; justify-content: center; font-size: 21px;
+  color: var(--primary);
+  display: flex; align-items: center; justify-content: center;
 }
+.upload-icon svg { display: block; }
+.upload-area:hover .upload-icon { color: var(--primary-dark); }
 .upload-main { margin: 10px 0 5px; font-size: 14.5px; color: var(--body); }
 .upload-hint { margin: 0; font-size: 11.5px; color: var(--muted); }
 .upload-error { color: #b91c1c; font-size: 12px; margin: 10px 0 0; }
