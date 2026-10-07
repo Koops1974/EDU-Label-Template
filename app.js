@@ -957,6 +957,31 @@ function initEvents() {
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") makeFromPaste();
   });
 
+  /* Optional Chrome-extension bridge ("Send to Label Maker"). Reuses the
+     exact paste path — same as typing the names and pressing Make labels.
+     Inert unless a "labelmaker-import" event is dispatched. */
+  const importFromExternal = (text) => {
+    try {
+      if (typeof text !== "string" || !text.trim()) return false;
+      setSourceTab("paste");
+      const box = $("#pasteList");
+      if (!box) return false;
+      box.value = text;
+      $("#pasteGo").click();
+      return true;
+    } catch (err) {
+      console.warn("Label maker import failed:", err);
+      return false;
+    }
+  };
+  const importFromExternalAndAck = (text) => {
+    const ok = importFromExternal(text);
+    document.documentElement.setAttribute("data-labelmaker-ok", ok ? "1" : "0");
+    return ok;
+  };
+  window.__labelMakerImport = importFromExternalAndAck;
+  document.addEventListener("labelmaker-import", (e) => importFromExternalAndAck(e.detail));
+
   $("#printBtn").addEventListener("click", () => window.print());
 
   /* Share this site: native share sheet where supported, otherwise copy

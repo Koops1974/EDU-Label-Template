@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Send to Label Maker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="head">
+    <img src="brand-logo.jpg" alt="" width="36" height="36">
+    <div>
+      <h1>Send to Label Maker</h1>
+      <p>for schools</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <label for="data">Names to import</label>
+    <textarea id="data" rows="7" spellcheck="false"
+      placeholder="John Smith&#10;Sarah Jones&#10;David Brown"></textarea>
+    <p class="hint">
+      <strong>1.</strong> In <strong>Google Sheets or Excel</strong>, highlight your
+      pupils' first name and surname columns and press <strong>Ctrl&nbsp;+&nbsp;C</strong>.<br>
+      <strong>2.</strong> Click in the box above and press <strong>Ctrl&nbsp;+&nbsp;V</strong>.<br>
+      <strong>3.</strong> Send to Label Maker.
+    </p>
+    <button id="sendBtn" class="primary" type="button">Send to Label Maker</button>
+    <p id="status" class="status" hidden></p>
+  </div>
+
+  <p class="foot">Labels are built entirely in your browser. Your pupil data is never uploaded.</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

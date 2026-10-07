@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Send to Label Maker for Schools",
+  "version": "0.2.0",
+  "description": "Send copied cells from Google Sheets, Excel or anywhere else straight to the free Label Maker for Schools preview — no uploads, pupil data stays on the device.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Send to Label Maker for Schools",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://labels.welwyntech.co.uk/*",
+    "file://*/*"
+  ]
+}
