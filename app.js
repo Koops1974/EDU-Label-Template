@@ -55,6 +55,16 @@ const AVERY_TEMPLATES = {
     note: "4 per sheet · 200 × 60 mm",
     short: "Lever arch / filing labels",
   },
+  KF01132: {
+    code: "KF01132", cols: 2, rows: 8,
+    labelW: 105, labelH: 37,
+    originX: 0, originY: 0,
+    pitchX: 105, pitchY: 37,
+    radius: 0, sharp: true,
+    fullBleed: true,
+    note: "16 per sheet · 105 × 37 mm",
+    short: "Q-Connect multi-purpose (butt cut)",
+  },
 };
 
 const PAGE_W = 210, PAGE_H = 297; // A4 portrait
@@ -191,6 +201,11 @@ function renderTemplateList() {
       `<div class="t-note">${t.short}</div>`;
     btn.addEventListener("click", () => {
       state.template = code;
+      if (t.fullBleed && state.opts.color) {
+        state.opts.color = false;
+        const chk = $("#optColor");
+        if (chk) chk.checked = false;
+      }
       renderTemplateList();
       renderAll();
     });
@@ -862,9 +877,12 @@ function renderAll() {
   renderPrintRoot();
   const hasData = state.rows.length > 0;
   $("#printBtn").disabled = !hasData;
-  $("#printNote").textContent = hasData
-    ? "Choose 'Save as PDF' in the print dialog for a printable file."
-    : "No preview? Upload a CSV first.";
+  const t = AVERY_TEMPLATES[state.template];
+  $("#printNote").textContent = !hasData
+    ? "No preview? Upload a CSV first."
+    : (t.fullBleed
+        ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
+        : "Choose 'Save as PDF' in the print dialog for a printable file.");
 }
 
 /* =====================================================================
