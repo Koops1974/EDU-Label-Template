@@ -42,10 +42,11 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace("const AVERY_TEMPLATES = {", "global.AVERY_TEMPLATES = {")
   .replace("const PAGE_W = 210, PAGE_H = 297;", "global.PAGE_W = 210; global.PAGE_H = 297;")
   .replace("const state = {", "global.state = {")
+  .replace("const GRAPHIC_TEMPLATES = [", "global.GRAPHIC_TEMPLATES = [")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
   );
 eval(appSrc);
 
@@ -328,6 +329,43 @@ check(state.rows.length === 1 && __app.fullName(state.rows[0]) === "Ada Lovelace
 // 5. Real non-Latin text must be left completely alone.
 const cjk = __app.decodeCsvBuffer(Buffer.from("Pupil Name,Subject\n\u6850\u85e4 \u82b1\u5b50,Maths\n", "utf8"));
 check(cjk.text.includes("\u6850\u85e4 \u82b1\u5b50") && cjk.note === "", "Japanese text left untouched");
+
+console.log("Experimental graphic templates (test feature):");
+const gT = global.AVERY_TEMPLATES["L7160"];
+const gRow = { "Pupil Name": "Aarav Patel", "Class/Form": "7A", Subject: "Mathematics", "Year Group": "Year 7" };
+const longRow = { "Pupil Name": "Alexandria-Eleanor-Margaret Beaumont-Smythe", "Class/Form": "7A", Subject: "Design & Technology", "Year Group": "Year 7" };
+state.columns = ["Pupil Name", "Class/Form", "Subject", "Year Group"];
+state.rows = [gRow, longRow];
+__app.autoMap();
+for (const d of global.GRAPHIC_TEMPLATES) {
+  state.graph = { slug: d.slug, pos: Math.round(d.centreY * 100), colour: "dark" };
+  const cell = __app.buildGraphicCell(gRow, gT, 0);
+  const cellLong = __app.buildGraphicCell(longRow, gT, 1);
+  check(/class="label-cell/.test(cell) && cell.includes('class="gfx-img"'), `${d.slug}: graphic cell keeps label-cell box + artwork img`);
+  check(cell.includes("src=\"Templates/") && cell.includes(encodeURIComponent(d.file)), `${d.slug}: references the supplied artwork file`);
+  check(cell.includes('class="gfx-img"') && (d.fit === "fill" ? cell.includes('style="object-fit:fill;"') : !cell.includes('object-fit:fill')), `${d.slug}: artwork fills the label${d.fit === "fill" ? " (stretched)" : " (cropped, no distortion)"}`);
+  check(cell.includes(">Aarav Patel</div>") && cell.includes("Mathematics") && cell.includes("7A"), `${d.slug}: name, subject and class render on the design`);
+  check(cellLong.includes("Alexandria-Eleanor-Margaret Beaumont-Smythe"), `${d.slug}: long name still present (wraps inside its band)`);
+  check(/top:[\d.]+%;height:[\d.]+%/.test(cell), `${d.slug}: text sits in its own positioned band (top/height %)`);
+  if (d.slug === "space-explorer") {
+    const m = /top:([\d.]+)%/.exec(cell);
+    check(m && Number(m[1]) >= 40, "space-explorer: its blank band defaults lower on the label (>=40%)");
+  }
+}
+// Multi-row CSV through the same planning pipeline.
+state.columns = ["Pupil Name", "Class/Form", "Subject", "Year Group"];
+state.rows = sample;
+__app.autoMap();
+state.template = "L7160";
+state.graph = { slug: "colourful-classroom", pos: 50, colour: "dark" };
+const multi = __app.buildSheets(true)[0];
+check((multi.match(/class="gfx-img"/g) || []).length === 21, "graphic sheet still builds 21 cells/sheet on L7160");
+check(multi.includes("Aarav Patel") && multi.includes("Mia Thompson") && multi.includes("Oliver Smith"), "all CSV rows appear on the graphic sheet");
+// Switching back must restore the original, geometry-identical cells.
+state.graph = null;
+const back = __app.buildSheets(true)[0];
+check(!back.includes("gfx-img") && back.includes("label-inner"), "switching back restores the original label cells");
+check(back.includes("left:7.48mm") && back.includes("top:15.49mm"), "plain sheet geometry unchanged after switching back");
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

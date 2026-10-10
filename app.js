@@ -113,6 +113,7 @@ const state = {
   sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
   layout: "classic",
+  graphic: null,   // experimental graphic design (null = normal labels)
   logoDataUrl: null,
   opts: {
     showGuides: true,
@@ -707,6 +708,105 @@ function buildLabelCell(row, t, cellIndex) {
   );
 }
 
+/* =====================================================================
+ *  EXPERIMENTAL GRAPHIC TEMPLATES
+ *  A test-only feature: overlay one of four supplied label artwork
+ *  designs onto the currently selected (and fully unchanged) label
+ *  sheet. NOT production. To remove it, delete GRAPHIC_TEMPLATES, the
+ *  gfx functions below, the "gfx" hooks in buildSheets /
+ *  emptySheetHtml / renderPreview / renderAll / initEvents, the
+ *  "Experimental graphic templates" section in index.html and the gfx
+ *  rules in styles.css.
+ * ===================================================================== */
+const GRAPHIC_TEMPLATES = [
+  { slug: "colourful-classroom", name: "Colourful Classroom", file: "Colourful Classroom.png", centreY: 0.48, bandHeight: 0.45, fit: "fill" },
+  { slug: "colourful-solid", name: "Colourful Solid", file: "colourful-classroom-solid.png", centreY: 0.50, bandHeight: 0.24, fit: "fill" },
+  { slug: "modern-pastel", name: "Modern Pastel", file: "Modern Pastel.jpg", centreY: 0.50, bandHeight: 0.30 },
+  { slug: "space-explorer", name: "Space Explorer", file: "Space Explorer.jpg", centreY: 0.55, bandHeight: 0.24 },
+  { slug: "nature-animals", name: "Nature & Animals", file: "Nature & Animals.jpg", centreY: 0.50, bandHeight: 0.30 },
+];
+
+const graphicSrc = (d) => "Templates/" + encodeURIComponent(d.file);
+const activeGraphic = () =>
+  GRAPHIC_TEMPLATES.find((d) => d.slug === (state.graph ? state.graph.slug : null)) || null;
+
+/* Text for a graphic label: name, subject and class/year only. The
+ * school-name strip is left out because each design has its own artwork
+ * at the top. Respecs the usual show-nothing toggles. */
+function graphicTextHtml(row, colour) {
+  const C = SCHOOL_CONFIG;
+  const o = state.opts;
+  const name = C.label.showPupilName ? fullName(row) : "";
+  const bits = [];
+  if (name) bits.push(`<div class="label-name gfx-line">${esc(name)}</div>`);
+  if (o.showSubject) {
+    const subj = fieldValue(row, "subject");
+    if (subj) bits.push(`<div class="label-subject gfx-line">${esc(subj)}</div>`);
+  }
+  const metaBits = [];
+  if (o.showClassName) {
+    const cls = fieldValue(row, "className");
+    if (cls) metaBits.push(`${C.label.showClassLabel}${esc(cls)}`);
+  }
+  if (o.showYearGroup) {
+    const yr = fieldValue(row, "yearGroup");
+    if (yr) metaBits.push(esc(yr));
+  }
+  if (metaBits.length) bits.push(`<div class="label-meta gfx-line"><span>${metaBits.join("</span><span>")}</span></div>`);
+  return bits.join("");
+}
+
+/* Graphic overlay cell. Same box, position, origin/pitch, guide and mm
+ * geometry as a normal cell — only the inside differs. The artwork is
+ * an <img> with object-fit: cover, so it is never stretched or
+ * distorted, and it prints normally. Text sits in the design's blank
+ * band (positioned per-design, fine-tunable in the UI). */
+function buildGraphicCell(row, t, cellIndex) {
+  const col = cellIndex % t.cols, rowIdx = Math.floor(cellIndex / t.cols);
+  const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowIdx * t.pitchY);
+  const g = state.graph || {};
+  const des = activeGraphic() || GRAPHIC_TEMPLATES[0];
+  const centreY = (typeof g.pos === "number" ? g.pos : Math.round(des.centreY * 100)) / 100;
+  const textTop = Math.max(1.5, (centreY - des.bandHeight / 2) * 100).toFixed(1);
+  const textH = (des.bandHeight * 100).toFixed(1);
+  const colour = g.colour === "light" ? "#ffffff" : SCHOOL_CONFIG.defaultTextColor;
+  const fs = fontScale(t.labelH);
+  const guidesCls = state.opts.showGuides ? " guides" : "";
+  const cssVars = `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
+    `--name-fs:${(5.2 * fs).toFixed(2)}mm;--subj-fs:${(3.0 * fs).toFixed(2)}mm;` +
+    `--meta-fs:${(2.5 * fs).toFixed(2)}mm;--r:${t.radius}mm;--gfx-scale:0.8;`;
+  const text = row ? graphicTextHtml(row, colour) : "";
+  const fit = des.fit === "fill" ? " style=\"object-fit:fill;\"" : "";
+  return (
+    `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+    `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
+      `<img class="gfx-img" src="${graphicSrc(des)}" alt="${esc(des.name)} label design"${fit}>` +
+      (text ? `<div class="gfx-text" style="top:${textTop}%;height:${textH}%;color:${colour};">${text}</div>` : "") +
+    `</div>`
+  );
+}
+
+/* Highlight the chosen design thumbnail and sync the experimental
+ * controls whenever the preview re-renders. */
+function renderGraphicStyles() {
+  const active = activeGraphic();
+  document.querySelectorAll(".gfx-card").forEach((c) => {
+    const on = active && c.dataset.slug === active.slug;
+    c.classList.toggle("selected", on);
+    c.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  const controls = $("#gfxControls");
+  if (controls) controls.hidden = !active;
+  const exit = $("#gfxExit");
+  if (exit) exit.hidden = !active;
+  if (active) {
+    const pos = $("#gfxPos");
+    if (pos) pos.value = (typeof state.graph.pos === "number" ? state.graph.pos : Math.round(active.centreY * 100));
+    const col = $("#gfxColour");
+    if (col) col.value = state.graph.colour || "dark";
+  }
+}
+
 function hexToRgba(hex, alpha) {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!m) return "rgba(29,78,216," + alpha + ")";
@@ -721,6 +821,7 @@ function emptySheetHtml() {
   const t = AVERY_TEMPLATES[state.template];
   let cells = "";
   for (let i = 0; i < t.cols * t.rows; i++) {
+    if (state.graph) { cells += buildGraphicCell(null, t, i); continue; }
     const col = i % t.cols, rowI = Math.floor(i / t.cols);
     const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowI * t.pitchY);
     const guides = state.opts.showGuides ? " guides" : "";
@@ -733,6 +834,7 @@ function emptySheetHtml() {
 
 function buildSheets(printMode) {
   const t = AVERY_TEMPLATES[state.template];
+  const cellBuilder = state.graph ? buildGraphicCell : buildLabelCell;
   const { fills, perSheet } = planFills();
   const sheetsHtml = [];
   const totalSheets = fills.length ? Math.max(...fills.map((f) => f.sheet)) + 1 : 0;
@@ -744,7 +846,9 @@ function buildSheets(printMode) {
     let cells = "";
     for (let i = 0; i < perSheet; i++) {
       if (cellsByCell[i] !== undefined) {
-        cells += buildLabelCell(cellsByCell[i], t, i);
+        cells += cellBuilder(cellsByCell[i], t, i);
+      } else if (state.graph) {
+        cells += cellBuilder(null, t, i);
       } else {
         const col = i % t.cols, rowI = Math.floor(i / t.cols);
         const guides = state.opts.showGuides ? " guides" : "";
@@ -769,7 +873,8 @@ function renderPreview() {
   container.innerHTML = sheets.join("");
   if (n) {
     const sheetsNeeded = Math.ceil(n / (t.cols * t.rows));
-    meta.textContent = `${n} label${n === 1 ? "" : "s"} · ${sheetsNeeded} sheet${sheetsNeeded === 1 ? "" : "s"} of ${t.code}`;
+    const gfxTag = state.graph ? " · graphic design " + (activeGraphic() ? activeGraphic().name : "") : "";
+    meta.textContent = `${n} label${n === 1 ? "" : "s"} · ${sheetsNeeded} sheet${sheetsNeeded === 1 ? "" : "s"} of ${t.code}${gfxTag}`;
   } else {
     meta.textContent = "Preview of " + t.code + " sheet";
   }
@@ -872,6 +977,7 @@ function updateSkippedNote() {
 }
 
 function renderAll() {
+  renderGraphicStyles();
   updateSkippedNote();
   renderPreview();
   renderPrintRoot();
@@ -880,9 +986,11 @@ function renderAll() {
   const t = AVERY_TEMPLATES[state.template];
   $("#printNote").textContent = !hasData
     ? "No preview? Upload a CSV first."
-    : (t.fullBleed
-        ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
-        : "Choose 'Save as PDF' in the print dialog for a printable file.");
+    : (state.graph
+        ? "Experimental graphic test — print at 100% scale. Print one sheet first before running the set."
+        : (t.fullBleed
+            ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
+            : "Choose 'Save as PDF' in the print dialog for a printable file."));
 }
 
 /* =====================================================================
@@ -1062,6 +1170,27 @@ function initEvents() {
     renderAll();
   });
 
+  /* --- Experimental graphic templates (test feature, isolated) --- */
+  const selectGraphic = (slug) => {
+    const d = GRAPHIC_TEMPLATES.find((x) => x.slug === slug);
+    if (!d) return;
+    state.graph = { slug: slug, pos: Math.round(d.centreY * 100), colour: "dark" };
+    renderAll();
+  };
+  document.querySelectorAll(".gfx-card").forEach((card) => {
+    card.addEventListener("click", () => selectGraphic(card.dataset.slug));
+  });
+  const gfxExit = $("#gfxExit");
+  if (gfxExit) gfxExit.addEventListener("click", () => { state.graph = null; renderAll(); });
+  const gfxPos = $("#gfxPos");
+  if (gfxPos) gfxPos.addEventListener("input", () => {
+    if (state.graph) { state.graph.pos = Number(gfxPos.value); renderAll(); }
+  });
+  const gfxColour = $("#gfxColour");
+  if (gfxColour) gfxColour.addEventListener("change", () => {
+    if (state.graph) { state.graph.colour = gfxColour.value; renderAll(); }
+  });
+
   /* A–Z label order (first name or surname) */
   const sortSelect = $("#sortSelect");
   if (sortSelect) {
@@ -1160,7 +1289,7 @@ function initEvents() {
   logoInput.hidden = true;
   document.body.appendChild(logoInput);
   const addLogoRow = () => {
-    const s = document.querySelector("#labelFieldsDetails");
+    const s = document.querySelector("#logoUploadRow");
     if (!s) return;
     const row = document.createElement("div");
     row.style.marginTop = "8px";

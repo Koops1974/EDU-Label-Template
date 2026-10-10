@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=14">
+<link rel="stylesheet" href="styles.css?v=15">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -155,7 +155,7 @@
         <span class="step-num">2</span>
         <h3 class="step-title">Map your columns</h3>
       </div>
-      <details class="adv-details" id="mapDetails" open>
+      <details class="adv-details" id="mapDetails">
         <summary>Column mapping &amp; options</summary>
         <p class="hint-text">Fields are numbered top to bottom. Each dropdown lists your uploaded CSV columns (labelled A, B, C… as in a spreadsheet). Any field can be hidden.</p>
 
@@ -178,7 +178,7 @@
       </div>
 
       <details class="adv-details" id="labelFieldsDetails">
-        <summary>Label fields &amp; logo</summary>
+        <summary>Label fields</summary>
         <label class="check"><input type="checkbox" id="optSchoolTop" checked><span>School name strip on label</span></label>
         <label class="check"><input type="checkbox" id="optClassName" checked><span>Class / form</span></label>
         <label class="check"><input type="checkbox" id="optSubject" checked><span>Subject</span></label>
@@ -194,6 +194,61 @@
         <h3 class="step-title">Choose your label sheet</h3>
       </div>
       <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
+    </section>
+
+    <!-- Graphic label designs (collapsible) -->
+    <section class="step gfx-step" aria-label="Graphic label designs">
+      <details class="gfx-details">
+        <summary class="step-head gfx-summary">
+          <span class="step-num">3b</span>
+          <h3 class="step-title">Graphic label designs</h3>
+          <span class="gfx-chev" aria-hidden="true"></span>
+        </summary>
+        <p class="hint-text">Pick a design to preview it on your chosen sheet above — your normal templates stay exactly as they were.
+          <button type="button" class="btn-ghost btn-sm" id="gfxExit" hidden>⬅ Back to plain labels</button>
+        </p>
+        <div id="gfxGrid" class="gfx-grid" role="radiogroup" aria-label="Graphic label designs">
+        <button type="button" class="gfx-card" data-slug="colourful-classroom" role="radio" aria-checked="false">
+          <img src="Templates/Colourful%20Classroom.png" alt="Colourful Classroom design preview">
+          <span class="gfx-name">Colourful Classroom</span>
+          <span class="gfx-try">Try this design</span>
+        </button>
+        <button type="button" class="gfx-card" data-slug="colourful-solid" role="radio" aria-checked="false">
+          <img src="Templates/colourful-classroom-solid.png" alt="Colourful Solid design preview">
+          <span class="gfx-name">Colourful Solid</span>
+          <span class="gfx-try">Try this design</span>
+        </button>
+        <button type="button" class="gfx-card" data-slug="modern-pastel" role="radio" aria-checked="false">
+          <img src="Templates/Modern%20Pastel.jpg" alt="Modern Pastel design preview">
+          <span class="gfx-name">Modern Pastel</span>
+          <span class="gfx-try">Try this design</span>
+        </button>
+        <button type="button" class="gfx-card" data-slug="space-explorer" role="radio" aria-checked="false">
+          <img src="Templates/Space%20Explorer.jpg" alt="Space Explorer design preview">
+          <span class="gfx-name">Space Explorer</span>
+          <span class="gfx-try">Try this design</span>
+        </button>
+        <button type="button" class="gfx-card" data-slug="nature-animals" role="radio" aria-checked="false">
+          <img src="Templates/Nature%20%26%20Animals.jpg" alt="Nature and Animals design preview">
+          <span class="gfx-name">Nature &amp; Animals</span>
+          <span class="gfx-try">Try this design</span>
+        </button>
+      </div>
+      <div class="gfx-options" id="gfxControls" hidden>
+        <div class="gfx-opt">
+          <label for="gfxPos">Text position</label>
+          <input type="range" id="gfxPos" min="25" max="75" step="1" value="50">
+          <span class="hint-inline">Slide to move the name band up or down on the label</span>
+        </div>
+        <div class="gfx-opt">
+          <label for="gfxColour">Text colour</label>
+          <select id="gfxColour">
+            <option value="dark" selected>Dark</option>
+            <option value="light">White</option>
+          </select>
+        </div>
+      </div>
+      </details>
     </section>
 
     <!-- Step 4 · Label style -->
@@ -248,6 +303,7 @@
         </select>
         <span class="hint-inline">Applies to the logo on each label (if one is set)</span>
       </div>
+      <div id="logoUploadRow"></div>
     </section>
 
     <!-- Advanced printing options -->
@@ -390,7 +446,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

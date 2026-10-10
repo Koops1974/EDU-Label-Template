@@ -556,3 +556,76 @@ a.btn-soft { text-decoration: none; text-align: center; }
 
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
+
+/* ============================================================
+   EXPERIMENTAL GRAPHIC TEMPLATES (test feature)
+   Keep the artwork uncropped-stretched: <img> with object-fit.
+   ============================================================ */
+.gfx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+.gfx-card {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  border: 1.5px solid var(--border); border-radius: 11px; padding: 9px;
+  cursor: pointer; background: #fff; text-align: center; font-family: inherit;
+  transition: border-color .12s, background .12s, box-shadow .12s;
+}
+.gfx-card:hover { border-color: #9db8dd; background: #fbfdff; }
+.gfx-card.selected { border-color: var(--primary); background: var(--pale); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+.gfx-card.selected::after {
+  content: "✓"; position: absolute; top: -9px; right: -9px; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--primary); color: #fff; font-size: 13px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 6px rgba(20,80,180,.35); line-height: 1;
+}
+.gfx-card img {
+  width: 100%; height: 82px; object-fit: cover; display: block;
+  border: 1px solid #e3ecf8; border-radius: 8px;
+}
+.gfx-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.gfx-try { font-size: 11.5px; font-weight: 600; color: var(--primary); }
+.gfx-options {
+  margin-top: 12px; padding: 10px 13px; border: 1px dashed var(--border);
+  border-radius: 11px; background: #fbfdff;
+  display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+}
+.gfx-opt { display: flex; align-items: center; gap: 8px; }
+.gfx-opt label { font-size: 12px; font-weight: 600; color: var(--body); }
+.gfx-opt input[type="range"] { width: 140px; }
+@media (max-width: 560px) { .gfx-grid { grid-template-columns: 1fr; } }
+
+/* Collapsible graphic-designs section */
+.gfx-step { margin-top: 14px; }
+.gfx-details { display: block; }
+.gfx-summary {
+  cursor: pointer; user-select: none; list-style: none; margin-bottom: 0;
+}
+.gfx-summary::-webkit-details-marker { display: none; }
+.gfx-chev {
+  margin-left: auto; display: inline-flex; align-items: center; color: var(--body);
+  transition: transform .15s ease; font-size: 14px;
+}
+.gfx-chev::before { content: "▾"; }
+.gfx-details[open] .gfx-chev { transform: rotate(180deg); }
+.gfx-summary:hover .step-title { color: var(--primary); }
+
+/* Graphic label layers — used in the on-screen sheet AND the printed sheet */
+.gfx-img {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block; pointer-events: none;
+}
+.gfx-text {
+  position: absolute; left: 5%; right: 5%;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 2%; text-align: center; overflow: hidden;
+}
+.gfx-text .label-name {
+  flex: 0 1 auto; padding: 0;
+  font-size: calc(var(--name-fs) * var(--gfx-scale, 0.8));
+}
+.gfx-text .label-subject {
+  flex: 0 1 auto; padding: 0; white-space: normal;
+  font-size: calc(var(--subj-fs) * var(--gfx-scale, 0.8));
+}
+.gfx-text .label-meta {
+  flex: 0 1 auto; padding: 0; flex-wrap: wrap;
+  font-size: calc(var(--meta-fs) * var(--gfx-scale, 1));
+}
