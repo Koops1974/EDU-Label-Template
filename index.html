@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=15">
+<link rel="stylesheet" href="styles.css?v=16">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -262,6 +262,7 @@
         <option value="classic" selected>School / name / subject</option>
         <option value="badge">Badge style</option>
         <option value="minimal">Minimal sticker</option>
+        <option value="marking">Story-club banner with WILF</option>
       </select>
 
       <div class="layout-cards" role="radiogroup" aria-label="Label style">
@@ -292,6 +293,29 @@
           <span class="layout-name">Minimal</span>
           <span class="layout-desc">Clean name &amp; subject</span>
         </button>
+        <button type="button" class="layout-card" data-layout="marking" role="radio" aria-checked="false">
+          <span class="l-prev l-prev-marking">
+            <span class="pm-head">
+              <span class="pm-logo"></span>
+              <span class="pm-head-text">
+                <span class="pm-title"></span>
+                <span class="pm-char"></span>
+              </span>
+            </span>
+            <span class="pm-row">
+              <span class="pm-vocab"></span>
+              <span class="pm-wilf">
+                <span class="pm-wilf-h">WILF</span>
+                <span class="pm-crit"><i></i></span>
+                <span class="pm-crit"><i></i></span>
+                <span class="pm-crit"><i></i></span>
+              </span>
+              <span class="pm-circle"></span>
+            </span>
+          </span>
+          <span class="layout-name">Marking</span>
+          <span class="layout-desc">Story banner with WILF &amp; tick circle</span>
+        </button>
       </div>
 
       <div class="logo-size-row">
@@ -304,6 +328,43 @@
         <span class="hint-inline">Applies to the logo on each label (if one is set)</span>
       </div>
       <div id="logoUploadRow"></div>
+
+      <div id="markingEditor" class="marking-editor" hidden>
+        <details class="adv-details" open>
+          <summary>Story-club banner content</summary>
+          <p class="hint-text">This style prints the same banner on every label — sizes to the wide 99×34&#8201;mm L7162 sheet. Edits apply instantly; no CSV needed.</p>
+          <div class="marking-fields">
+            <label for="mkTitle">Lesson / club title
+              <input type="text" id="mkTitle">
+            </label>
+            <label for="mkChar">Subtitle / character
+              <input type="text" id="mkChar">
+            </label>
+            <label for="mkVocab">Vocabulary / word bank <span class="hint-inline">one per line</span>
+              <textarea id="mkVocab" rows="3"></textarea>
+            </label>
+            <div class="marking-imgs">
+              <span class="mk-upload">
+                <button type="button" class="btn-ghost btn-sm" id="mkClubBtn">Club badge…</button>
+                <button type="button" class="btn-ghost btn-sm" id="mkClubClear" hidden>Remove</button>
+              </span>
+              <span class="mk-upload">
+                <button type="button" class="btn-ghost btn-sm" id="mkStoryBtn">Story image…</button>
+                <button type="button" class="btn-ghost btn-sm" id="mkStoryClear" hidden>Remove</button>
+              </span>
+            </div>
+            <label class="check"><input type="checkbox" id="mkShowWilf" checked><span>Show WILF checklist</span></label>
+            <label class="check"><input type="checkbox" id="mkShowCircle" checked><span>Show grading circle (tick by hand)</span></label>
+            <div class="marking-wilfs">
+              <label class="hint-inline" for="mkWilf1">WILF criteria (leave blank to skip):</label>
+              <input type="text" id="mkWilf1" placeholder="Capital Letters">
+              <input type="text" id="mkWilf2" placeholder=". (Full stop)">
+              <input type="text" id="mkWilf3" placeholder="word with prefix un">
+              <input type="text" id="mkWilf4" placeholder="(optional 4th success criterion)">
+            </div>
+          </div>
+        </details>
+      </div>
     </section>
 
     <!-- Advanced printing options -->
@@ -446,7 +507,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=19"></script>
+<script src="app.js?v=20"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

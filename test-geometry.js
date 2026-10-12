@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
   );
 eval(appSrc);
 
@@ -366,6 +366,61 @@ state.graph = null;
 const back = __app.buildSheets(true)[0];
 check(!back.includes("gfx-img") && back.includes("label-inner"), "switching back restores the original label cells");
 check(back.includes("left:7.48mm") && back.includes("top:15.49mm"), "plain sheet geometry unchanged after switching back");
+
+console.log("Marking / Story-club banner label (static layout):");
+check(state.banner.title === "" && state.banner.character === "" && state.banner.vocab === "", "banner text starts empty (teacher types their own content)");
+const mT = global.AVERY_TEMPLATES["L7162"];
+state.layout = "marking";
+state.template = "L7162";
+state.rows = [];
+state.graph = null;
+const blankCell = __app.buildMarkingCell(mT, 0);
+check(!blankCell.includes('class="mk-title"') && !blankCell.includes('class="mk-char"'), "empty banner hides the title/character lines");
+check((blankCell.match(/class="mk-box"/g) || []).length === 0, "empty WILF criteria renders the header but no checkboxes");
+state.banner.title = "Drawing Club: The Magic Paintbrush";
+state.banner.character = "Character: Chang";
+state.banner.vocab = "avaricious, capsized\nobey, enchanted";
+state.banner.wilf = ["Capital Letters", ". (Full stop)", "word with prefix un", ""];
+const mCell = __app.buildMarkingCell(mT, 0);
+check(mCell.includes('class="label-inner marking"'), "marking cell uses the marking interior");
+check(mCell.includes("Drawing Club: The Magic Paintbrush"), "title renders from state.banner");
+check(mCell.includes("Character: Chang"), "character line renders");
+check(mCell.includes("avaricious") && mCell.includes("obey"), "vocabulary block renders");
+check(mCell.includes(">WILF<"), "WILF header renders");
+check((mCell.match(/class="mk-box"/g) || []).length === 3, "three WILF criteria checkboxes render (4th is blank/skipped)");
+check(mCell.includes("Capital Letters") && mCell.includes("word with prefix un"), "typed criteria text renders");
+check(mCell.includes('class="mk-circle"'), "grading circle renders as its own outline element");
+check(/left:[\d.]+mm;top:[\d.]+mm;/.test(mCell), "marking cell keeps label geometry (mm origin + size)");
+const markSheets = __app.buildSheets(true);
+check(markSheets.length === 1, "empty data still prints exactly one marking sheet");
+check((markSheets[0].match(/label-inner marking/g) || []).length === 16, "L7162 marking sheet builds all 16 cells");
+const normCell = (s) => s.replace(/left:[\d.]+mm/g, "L").replace(/top:[\d.]+mm/g, "T");
+const second = normCell(mCell) === normCell(__app.buildMarkingCell(mT, 15));
+check(second, "every marking cell is identical (static banner, no row data)");
+state.banner.showWilf = false;
+state.banner.showCircle = false;
+const trimmed = __app.buildMarkingCell(mT, 0);
+check(!trimmed.includes('class="mk-wilf"') && !trimmed.includes('class="mk-circle"'), "WILF and circle toggle off cleanly");
+state.banner.showWilf = true;
+state.banner.showCircle = true;
+state.banner.wilf.push("Be kind");
+const four = __app.buildMarkingCell(mT, 0);
+check((four.match(/class="mk-box"/g) || []).length === 4, "4th WILF criterion renders when supplied");
+state.banner.wilf.length -= 1;
+// The same banner must build on the KF01132 butt-cut sheet (105 x 37 mm).
+const kT = global.AVERY_TEMPLATES["KF01132"];
+const kCell = __app.buildMarkingCell(kT, 0);
+check(kCell.includes('class="label-inner marking"') && kCell.includes("Drawing Club: The Magic Paintbrush"), "marking banner builds on the KF01132 sheet");
+check(/left:0\.00mm;top:0\.00mm/.test(kCell), "KF01132 keeps its full-bleed origin at 0,0");
+const kSheets = __app.buildSheets(true);
+check((kSheets[0].match(/label-inner marking/g) || []).length === 16, "KF01132 marking sheet builds all 16 cells");
+
+// Restore app defaults so later checks start clean.
+state.banner.title = ""; state.banner.character = ""; state.banner.vocab = "";
+state.banner.wilf = ["", "", "", ""];
+state.layout = "classic";
+state.template = "L7160";
+state.rows = sample;
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

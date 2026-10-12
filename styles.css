@@ -310,7 +310,7 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .template-card .t-note { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
 
 /* ---------- Label style cards ---------- */
-.layout-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
+.layout-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; margin-top: 4px; }
 .layout-card {
   position: relative; display: flex; flex-direction: column; gap: 7px;
   border: 1.5px solid var(--border); border-radius: 11px; padding: 10px 10px 12px;
@@ -362,6 +362,25 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .l-prev-badge .p-subj { background: rgba(29,78,216,.14); color: #1d3fa0; }
 .l-prev-minimal { justify-content: center; gap: 6px; }
 .l-prev-minimal .p-subj { font-size: 9px; padding: 3px 8px; }
+.l-prev-marking { gap: 5px; }
+.l-prev-marking .pm-head { display: flex; gap: 5px; align-items: flex-start; }
+.l-prev-marking .pm-logo { width: 13px; height: 13px; flex: none; border: 1px solid var(--ink); border-radius: 2px; }
+.l-prev-marking .pm-head-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.l-prev-marking .pm-title { height: 5px; background: var(--ink); border-radius: 1px; }
+.l-prev-marking .pm-char { height: 4px; background: #c3cde0; border-radius: 1px; }
+.l-prev-marking .pm-row { display: flex; gap: 5px; flex: 1; align-items: stretch; }
+.l-prev-marking .pm-vocab { flex: 1; border: 1px solid var(--ink); border-radius: 2px; }
+.l-prev-marking .pm-wilf {
+  width: 34px; border: 1px solid var(--ink); border-radius: 2px;
+  padding: 3px 3px 1px; display: flex; flex-direction: column; gap: 3px;
+}
+.l-prev-marking .pm-wilf-h {
+  font-size: 6px; font-weight: 800; text-align: center; letter-spacing: .05em;
+  border-bottom: 1px solid var(--ink); padding-bottom: 1px;
+}
+.l-prev-marking .pm-crit { display: flex; gap: 3px; align-items: center; }
+.l-prev-marking .pm-crit i { width: 4px; height: 4px; border: 1px solid var(--ink); border-radius: 1px; flex: none; }
+.l-prev-marking .pm-circle { width: 12px; height: 12px; border: 1.5px solid var(--ink); border-radius: 50%; align-self: center; flex: none; }
 
 /* ---------- Print-offset calibration (Printing options) ---------- */
 .cal-box { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px; }
@@ -628,4 +647,95 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .gfx-text .label-meta {
   flex: 0 1 auto; padding: 0; flex-wrap: wrap;
   font-size: calc(var(--meta-fs) * var(--gfx-scale, 1));
+}
+
+/* ================================================================
+   Story-club banner (marking) label — monochrome, static content
+   ================================================================ */
+.label-inner.marking {
+  display: grid; grid-template-columns: 1fr auto auto;
+  column-gap: 1.4mm; padding: 1.6mm 1.7mm; background: #fff;
+  color: #111; overflow: hidden;
+}
+.mk-left { display: flex; flex-direction: column; gap: 1mm; min-width: 0; }
+.mk-head { display: flex; align-items: flex-start; gap: 1.4mm; min-width: 0; }
+.mk-club-img, .mk-club-mark {
+  width: var(--mk-logo, 8mm); height: var(--mk-logo, 8mm); flex: none;
+  object-fit: contain; border: 0.3mm solid #111; border-radius: 1mm;
+}
+.mk-club-mark {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: calc(var(--mk-logo, 8mm) * 0.42);
+}
+.mk-titles { display: flex; flex-direction: column; min-width: 0; }
+.mk-title {
+  font-weight: 800; font-size: var(--mk-title-fs, 3.4mm); line-height: 1.1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mk-char {
+  font-size: var(--mk-char-fs, 2.1mm); font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mk-title:empty { display: none; }
+.mk-char:empty { display: none; }
+.mk-low { display: flex; flex: 1; gap: 1.4mm; min-height: 0; min-width: 0; }
+.mk-story-img {
+  width: 26%; height: 100%; object-fit: cover; flex: none;
+  border: 0.3mm solid #111; border-radius: 0.8mm;
+}
+.mk-story-ph {
+  width: 26%; height: 100%; flex: none; border: 0.3mm dashed #666;
+  border-radius: 0.8mm; display: flex; align-items: center; justify-content: center;
+  color: #666; font-size: 1.6mm; font-weight: 700;
+}
+.mk-vocab {
+  flex: 1; min-width: 0; border: 0.3mm solid #111; border-radius: 0.8mm;
+  font-size: var(--mk-vocab-fs, 1.9mm); font-weight: 700; line-height: 1.35;
+  padding: 1mm 1.2mm; overflow: hidden;
+}
+.mk-wilf {
+  display: flex; flex-direction: column; width: 30%;
+  min-width: 16mm; border: 0.4mm solid #111; border-radius: 1mm;
+  padding: 1mm 1.2mm; overflow: hidden;
+}
+.mk-wilf-h {
+  font-weight: 800; font-size: var(--mk-wilf-fs, 2.5mm); letter-spacing: .04em;
+  text-align: center; border-bottom: 0.25mm solid #111;
+  padding-bottom: 0.6mm; margin-bottom: 0.5mm;
+}
+.mk-crit {
+  display: flex; align-items: center; gap: 1mm;
+  font-size: var(--mk-crit-fs, 1.8mm); line-height: 1.15; padding: 0.5mm 0;
+}
+.mk-box { width: 2.6mm; height: 2.6mm; flex: none; border: 0.35mm solid #111; border-radius: 0.4mm; }
+.mk-crit-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-circle {
+  width: var(--mk-circle, 8mm); height: var(--mk-circle, 8mm);
+  align-self: center; flex: none; border: 0.5mm solid #111; border-radius: 50%;
+}
+
+/* ---------- Marking / story-club editor panel ---------- */
+.marking-editor { margin-top: 14px; }
+.marking-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-top: 10px; }
+.marking-fields label {
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; font-weight: 600; color: var(--body);
+}
+.marking-fields input[type="text"], .marking-fields textarea {
+  border: 1px solid var(--border); border-radius: 9px;
+  padding: 7px 9px; font: inherit; font-size: 13.5px; color: var(--ink); background: #fff;
+}
+.marking-fields textarea { resize: vertical; }
+.marking-fields .check { flex-direction: row; align-items: center; }
+.marking-imgs {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+}
+.mk-upload { display: inline-flex; gap: 6px; align-items: center; }
+.marking-wilfs {
+  grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; align-items: stretch;
+}
+.marking-wilfs input[type="text"] { width: 100%; }
+@media (max-width: 560px) {
+  .marking-fields { grid-template-columns: 1fr; }
+  .marking-imgs, .marking-wilfs { grid-column: 1 / -1; }
 }

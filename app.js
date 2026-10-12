@@ -115,6 +115,17 @@ const state = {
   layout: "classic",
   graphic: null,   // experimental graphic design (null = normal labels)
   logoDataUrl: null,
+  /* Marking / Story-club banner label (static, editable at print time) */
+  banner: {
+    title: "",          // typed by the teacher in Step 4
+    character: "",
+    vocab: "",
+    wilf: ["", "", "", ""],
+    showWilf: true,
+    showCircle: true,
+    clubLogo: null,   // dataURL
+    storyImage: null, // dataURL
+  },
   opts: {
     showGuides: true,
     color: true,
@@ -709,6 +720,61 @@ function buildLabelCell(row, t, cellIndex) {
 }
 
 /* =====================================================================
+ *  Marking / Story-club banner label
+ *  A static, landscape banner (calibrated for L7162, 99.1 x 33.9mm):
+ *  editable title + character, uploadable club badge and story picture,
+ *  a vocabulary block, a toggleable WILF checklist (editable criteria)
+ *  and a standalone tick circle. Identical on every label on the print.
+ * ===================================================================== */
+function markingContentHtml() {
+  const b = state.banner;
+  const logoUrl = b.clubLogo || (SCHOOL_CONFIG.logo ? SCHOOL_CONFIG.logo : "");
+  const club = logoUrl
+    ? `<img class="mk-club-img" src="${esc(logoUrl)}" alt="">`
+    : `<span class="mk-club-mark">${esc((SCHOOL_CONFIG.logoText || SCHOOL_CONFIG.shortName || "CLUB").slice(0, 2).toUpperCase())}</span>`;
+  const title = b.title ? `<div class="mk-title">${esc(b.title)}</div>` : "";
+  const char = b.character ? `<div class="mk-char">${esc(b.character)}</div>` : "";
+  const story = b.storyImage
+    ? `<img class="mk-story-img" src="${esc(b.storyImage)}" alt="">`
+    : `<div class="mk-story-ph">Story</div>`;
+  const vocab = (b.vocab || "").split("\n").map((l) => esc(l)).join("<br>");
+  const crit = (Array.isArray(b.wilf) ? b.wilf : []).filter((s) => String(s).trim() !== "");
+  const wilf = b.showWilf
+    ? `<div class="mk-wilf"><div class="mk-wilf-h">WILF</div>` +
+      crit.map((s) => `<div class="mk-crit"><span class="mk-box"></span><span class="mk-crit-t">${esc(s)}</span></div>`).join("") +
+      `</div>`
+    : "";
+  const circle = b.showCircle ? `<div class="mk-circle"></div>` : "";
+  return (
+    `<div class="mk-left">` +
+      `<div class="mk-head">${club}<div class="mk-titles">${title}${char}</div></div>` +
+      `<div class="mk-low">${story}<div class="mk-vocab">${vocab}</div></div>` +
+    `</div>${wilf}${circle}`
+  );
+}
+
+function buildMarkingCell(t, cellIndex) {
+  const col = cellIndex % t.cols, rowIdx = Math.floor(cellIndex / t.cols);
+  const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowIdx * t.pitchY);
+  const fs = fontScale(t.labelH);
+  const guidesCls = state.opts.showGuides ? " guides" : "";
+  const cssVars =
+    `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
+    `--mk-title-fs:${(3.4 * fs).toFixed(2)}mm;--mk-char-fs:${(2.1 * fs).toFixed(2)}mm;` +
+    `--mk-vocab-fs:${(1.9 * fs).toFixed(2)}mm;--mk-wilf-fs:${(2.5 * fs).toFixed(2)}mm;` +
+    `--mk-crit-fs:${(1.8 * fs).toFixed(2)}mm;` +
+    `--mk-logo:${Math.min(9, t.labelH * 0.34).toFixed(2)}mm;` +
+    `--mk-circle:${Math.min(8, t.labelH * 0.4).toFixed(2)}mm;` +
+    `--r:${t.radius}mm;`;
+  return (
+    `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+    `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
+      `<div class="label-inner marking" style="color:#111;">${markingContentHtml()}</div>` +
+    `</div>`
+  );
+}
+
+/* =====================================================================
  *  EXPERIMENTAL GRAPHIC TEMPLATES
  *  A test-only feature: overlay one of four supplied label artwork
  *  designs onto the currently selected (and fully unchanged) label
@@ -822,6 +888,7 @@ function emptySheetHtml() {
   let cells = "";
   for (let i = 0; i < t.cols * t.rows; i++) {
     if (state.graph) { cells += buildGraphicCell(null, t, i); continue; }
+    if (state.layout === "marking") { cells += buildMarkingCell(t, i); continue; }
     const col = i % t.cols, rowI = Math.floor(i / t.cols);
     const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowI * t.pitchY);
     const guides = state.opts.showGuides ? " guides" : "";
@@ -834,6 +901,22 @@ function emptySheetHtml() {
 
 function buildSheets(printMode) {
   const t = AVERY_TEMPLATES[state.template];
+
+  /* Static banner labels: the design is identical on every cell, so a
+   * full sheet is always produced (rows only decide how many sheets). */
+  if (state.layout === "marking") {
+    const perSheet = t.cols * t.rows;
+    const totalSheets = Math.max(1, Math.ceil((state.rows.length || 1) / perSheet));
+    const sheetsHtml = [];
+    for (let s = 0; s < totalSheets; s++) {
+      let cells = "";
+      for (let i = 0; i < perSheet; i++) cells += buildMarkingCell(t, i);
+      const cls = printMode ? "sheet print-sheet" : "sheet";
+      sheetsHtml.push(`<div class="${cls}"><div class="sheet-pad">${cells}</div></div>`);
+    }
+    return sheetsHtml;
+  }
+
   const cellBuilder = state.graph ? buildGraphicCell : buildLabelCell;
   const { fills, perSheet } = planFills();
   const sheetsHtml = [];
@@ -869,9 +952,13 @@ function renderPreview() {
   const meta = $("#previewMeta");
   const t = AVERY_TEMPLATES[state.template];
   const n = planFills().fills.length;
-  const sheets = n ? buildSheets(false) : [emptySheetHtml()];
+  const isMarking = state.layout === "marking";
+  const sheets = (n || isMarking) ? buildSheets(false) : [emptySheetHtml()];
   container.innerHTML = sheets.join("");
-  if (n) {
+  if (isMarking) {
+    const needed = Math.max(1, Math.ceil((state.rows.length || 1) / (t.cols * t.rows)));
+    meta.textContent = `Marking label (${t.code}) · ${needed} sheet${needed === 1 ? "" : "s"} · identical banner on every label`;
+  } else if (n) {
     const sheetsNeeded = Math.ceil(n / (t.cols * t.rows));
     const gfxTag = state.graph ? " · graphic design " + (activeGraphic() ? activeGraphic().name : "") : "";
     meta.textContent = `${n} label${n === 1 ? "" : "s"} · ${sheetsNeeded} sheet${sheetsNeeded === 1 ? "" : "s"} of ${t.code}${gfxTag}`;
@@ -883,7 +970,8 @@ function renderPreview() {
 function renderPrintRoot() {
   const root = $("#printRoot");
   const n = planFills().fills.length;
-  root.innerHTML = n ? buildSheets(true).join("") : "";
+  const isMarking = state.layout === "marking";
+  root.innerHTML = (n || isMarking) ? buildSheets(true).join("") : "";
   const sheets = $$(".print-sheet", root);
   // ensure proper page-break grouping
   sheets.forEach((sh) => sh.style.pageBreakBefore = "");
@@ -981,16 +1069,21 @@ function renderAll() {
   updateSkippedNote();
   renderPreview();
   renderPrintRoot();
-  const hasData = state.rows.length > 0;
+  const isMarking = state.layout === "marking";
+  const hasData = state.rows.length > 0 || isMarking;
   $("#printBtn").disabled = !hasData;
   const t = AVERY_TEMPLATES[state.template];
   $("#printNote").textContent = !hasData
     ? "No preview? Upload a CSV first."
-    : (state.graph
-        ? "Experimental graphic test — print at 100% scale. Print one sheet first before running the set."
-        : (t.fullBleed
-            ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
-            : "Choose 'Save as PDF' in the print dialog for a printable file."));
+    : (isMarking
+        ? (t.fullBleed
+            ? "Marking label — full-bleed sheet, print at 100% with margins set to 'none'. No CSV needed; the tick circle is ticked by hand after printing."
+            : "Marking label — print at 100%. No CSV needed; the tick circle is ticked by hand after printing.")
+        : (state.graph
+            ? "Experimental graphic test — print at 100% scale. Print one sheet first before running the set."
+            : (t.fullBleed
+                ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
+                : "Choose 'Save as PDF' in the print dialog for a printable file.")));
 }
 
 /* =====================================================================
@@ -1167,8 +1260,68 @@ function initEvents() {
 
   $("#layoutSelect").addEventListener("change", (e) => {
     state.layout = e.target.value;
+    renderMarkingEditor();
     renderAll();
   });
+
+  /* --- Marking / Story-club banner content editor --- */
+  const readText = (id) => {
+    const el = $(id);
+    return el ? el.value : "";
+  };
+  const syncWilf = () => {
+    state.banner.wilf = [1, 2, 3, 4].map((i) => readText("#mkWilf" + i));
+  };
+  const wireMarkingEditor = () => {
+    [["#mkTitle", "title"], ["#mkChar", "character"], ["#mkVocab", "vocab"]].forEach(([sel, key]) => {
+      const el = $(sel);
+      if (!el) return;
+      el.value = state.banner[key] || "";
+      el.addEventListener("input", () => { state.banner[key] = el.value; renderAll(); });
+    });
+    [1, 2, 3, 4].forEach((i) => {
+      const el = $("#mkWilf" + i);
+      if (!el) return;
+      el.value = (state.banner.wilf && state.banner.wilf[i - 1]) || "";
+      el.addEventListener("input", () => { syncWilf(); renderAll(); });
+    });
+    const showWilf = $("#mkShowWilf"), showCircle = $("#mkShowCircle");
+    if (showWilf) { showWilf.checked = !!state.banner.showWilf; showWilf.addEventListener("change", () => { state.banner.showWilf = showWilf.checked; renderAll(); }); }
+    if (showCircle) { showCircle.checked = !!state.banner.showCircle; showCircle.addEventListener("change", () => { state.banner.showCircle = showCircle.checked; renderAll(); }); }
+    const clubBtn = $("#mkClubBtn"), clubClear = $("#mkClubClear");
+    const storyBtn = $("#mkStoryBtn"), storyClear = $("#mkStoryClear");
+    const syncBtns = () => {
+      if (clubBtn) clubBtn.textContent = state.banner.clubLogo ? "Change badge…" : "Club badge…";
+      if (clubClear) clubClear.style.display = state.banner.clubLogo ? "" : "none";
+      if (storyBtn) storyBtn.textContent = state.banner.storyImage ? "Change story image…" : "Story image…";
+      if (storyClear) storyClear.style.display = state.banner.storyImage ? "" : "none";
+    };
+    const mkUpload = (fileInput, onChange) => fileInput.addEventListener("change", () => {
+      const f = fileInput.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { onChange(r.result); syncBtns(); renderAll(); };
+      r.readAsDataURL(f);
+    });
+    const clubInput = document.createElement("input");
+    clubInput.type = "file"; clubInput.accept = "image/*"; clubInput.hidden = true;
+    const storyInput = document.createElement("input");
+    storyInput.type = "file"; storyInput.accept = "image/*"; storyInput.hidden = true;
+    document.body.appendChild(clubInput); document.body.appendChild(storyInput);
+    if (clubBtn) clubBtn.addEventListener("click", () => clubInput.click());
+    if (clubClear) clubClear.addEventListener("click", () => { state.banner.clubLogo = null; syncBtns(); renderAll(); });
+    if (storyBtn) storyBtn.addEventListener("click", () => storyInput.click());
+    if (storyClear) storyClear.addEventListener("click", () => { state.banner.storyImage = null; syncBtns(); renderAll(); });
+    mkUpload(clubInput, (dataUrl) => { state.banner.clubLogo = dataUrl; });
+    mkUpload(storyInput, (dataUrl) => { state.banner.storyImage = dataUrl; });
+    syncBtns();
+  };
+  const renderMarkingEditor = () => {
+    const ed = $("#markingEditor");
+    if (ed) ed.hidden = state.layout !== "marking";
+  };
+  renderMarkingEditor();
+  wireMarkingEditor();
 
   /* --- Experimental graphic templates (test feature, isolated) --- */
   const selectGraphic = (slug) => {
