@@ -89,6 +89,28 @@ for (const code of Object.keys(AVERY_TEMPLATES)) {
         `${code}: ${t.cols}x${t.rows}=${perSheet}/sheet fits A4 (right=${rightEdge.toFixed(2)}, bottom=${bottomEdge.toFixed(2)})`);
 }
 
+console.log("L7165 (8/sheet, 99.1 x 67.7 mm):");
+{
+  const savedRows = state.rows, savedTemplate = state.template;
+  state.rows = Array.from({ length: 16 }, (_, i) => ({
+    "Pupil Name": "Pupil " + (i + 1), "Class/Form": "7A", Subject: "Maths", "Year Group": "Year 7",
+  }));
+  state.template = "L7165";
+  const l65 = __app.buildSheets(false);
+  check(l65.length === 2, `16 pupils on L7165 (8/sheet) → 2 sheets, got ${l65.length}`);
+  const cells = [...l65[0].matchAll(/left:([\d.]+)mm;top:([\d.]+)mm;width:([\d.]+)mm;height:([\d.]+)mm/g)];
+  check(cells.length === 8, `L7165 sheet 1 holds all 8 labels, got ${cells.length}`);
+  check(cells[0][1] === "3.99" && cells[0][2] === "13.10",
+        `first L7165 label at (3.99, 13.10) got (${cells[0][1]}, ${cells[0][2]})`);
+  check(cells[7][1] === "106.47" && cells[7][2] === "216.20",
+        `last L7165 label at (106.47, 216.20) got (${cells[7][1]}, ${cells[7][2]})`);
+  check(cells[0][3] === "99.10" && cells[0][4] === "67.70",
+        `L7165 label size 99.1 × 67.7 mm, got ${cells[0][3]} × ${cells[0][4]}`);
+  check(l65[0].includes("Pupil 1") && l65[1].includes("Pupil 9"), "pupils fill the sheet in order across both sheets");
+  state.template = savedTemplate;
+  state.rows = savedRows;
+}
+
 console.log("Sheet builder (L7160, 3 pupils → 1 sheet):");
 state.template = "L7160";
 const sheets = __app.buildSheets(false);

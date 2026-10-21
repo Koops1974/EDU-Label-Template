@@ -46,6 +46,15 @@ const AVERY_TEMPLATES = {
     note: "14 per sheet · 99.1 × 38.1 mm",
     short: "Wide address / shipping",
   },
+  L7165: {
+    code: "L7165", cols: 2, rows: 4,
+    labelW: 99.1, labelH: 67.7,
+    originX: 3.99, originY: 13.1,
+    pitchX: 102.48, pitchY: 67.7,
+    radius: 1.76, sharp: false,
+    note: "8 per sheet · 99.1 × 67.7 mm",
+    short: "Large multi-purpose labels",
+  },
   L7171: {
     code: "L7171", cols: 1, rows: 4,
     labelW: 200, labelH: 60,
