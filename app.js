@@ -143,6 +143,10 @@ const state = {
     colourField: "name",
     logoSize: "std",
     subjectHighlight: true,
+    font: "",            // "" = default system font
+    nameSize: 1,         // per-line text size multipliers
+    subjSize: 1,
+    metaSize: 1,
     showSchoolTop: SCHOOL_CONFIG.label.showSchoolNameTop,
     showClassName: SCHOOL_CONFIG.label.showClassName,
     showSubject: SCHOOL_CONFIG.label.showSubject,
@@ -190,6 +194,8 @@ function resolveColour(raw) {
 }
 
 const LOGO_MULT = { std: 1, lg: 1.7, xl: 2.4 };
+const FONT_KEYS = ["comic", "georgia", "verdana", "trebuchet"];
+const LAYOUT_KEYS = ["classic", "badge", "minimal", "stack", "marking"];
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
@@ -676,10 +682,16 @@ function labelContentHtml(row) {
   }
 
   const metaBits = [];
-  if (o.showClassName && cls) metaBits.push(`${C.label.showClassLabel}${esc(cls)}`);
-  if (o.showYearGroup && yr) metaBits.push(esc(yr));
+  if (state.layout === "stack") {
+    /* Stack layout reads "Year · Class" (year first, no "Class:" prefix). */
+    if (o.showYearGroup && yr) metaBits.push(esc(yr));
+    if (o.showClassName && cls) metaBits.push(esc(cls));
+  } else {
+    if (o.showClassName && cls) metaBits.push(`${C.label.showClassLabel}${esc(cls)}`);
+    if (o.showYearGroup && yr) metaBits.push(esc(yr));
+  }
   const metaPart = metaBits.length
-    ? `<div class="label-meta"${cStyle("meta")}><span>${metaBits.join("</span><span>")}</span></div>`
+    ? `<div class="label-meta"${cStyle("meta")}><span>${metaBits.join(state.layout === "stack" ? " · " : "</span><span>")}</span></div>`
     : "";
 
   return { namePart, subjectPart, metaPart, parts, name, rowColour };
@@ -702,13 +714,15 @@ function buildLabelCell(row, t, cellIndex) {
   const schoolTop = parts.join("");
 
   const layoutCls = " " + state.layout;
+  const o = state.opts;
+  const fontCls = o.font ? " f-" + o.font : "";
   const cssVars =
     `--lh:${labelH.toFixed(2)}mm;` +
     `--lw:${t.labelW.toFixed(2)}mm;` +
-    `--name-fs:${(5.2 * fs).toFixed(2)}mm;` +
+    `--name-fs:${(5.2 * fs * o.nameSize).toFixed(2)}mm;` +
     `--school-fs:${(2.9 * fs).toFixed(2)}mm;` +
-    `--subj-fs:${(3.0 * fs).toFixed(2)}mm;` +
-    `--meta-fs:${(2.5 * fs).toFixed(2)}mm;` +
+    `--subj-fs:${(3.0 * fs * o.subjSize).toFixed(2)}mm;` +
+    `--meta-fs:${(2.5 * fs * o.metaSize).toFixed(2)}mm;` +
     `--r:${t.radius}mm;` +
     `--accent-soft:${accentSoft};` +
     `--bar-bg:${effectiveBarColor()};` +
@@ -723,7 +737,7 @@ function buildLabelCell(row, t, cellIndex) {
   return (
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${labelH.toFixed(2)}mm;${cssVars}">` +
-      `<div class="label-inner${layoutCls}${colorCls}${hlCls}" style="color:${outerTextColor};">` +
+      `<div class="label-inner${layoutCls}${colorCls}${hlCls}${fontCls}" style="color:${outerTextColor};">` +
         `${schoolTop}${namePart}${subjectPart}${metaPart}` +
       `</div>` +
     `</div>`
@@ -780,7 +794,7 @@ function buildMarkingCell(t, cellIndex) {
   return (
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
-      `<div class="label-inner marking" style="color:#111;">${markingContentHtml()}</div>` +
+      `<div class="label-inner marking${state.opts.font ? " f-" + state.opts.font : ""}" style="color:#111;">${markingContentHtml()}</div>` +
     `</div>`
   );
 }
@@ -849,16 +863,18 @@ function buildGraphicCell(row, t, cellIndex) {
   const colour = g.colour === "light" ? "#ffffff" : SCHOOL_CONFIG.defaultTextColor;
   const fs = fontScale(t.labelH);
   const guidesCls = state.opts.showGuides ? " guides" : "";
+  const so = state.opts;
+  const fontCls = so.font ? " f-" + so.font : "";
   const cssVars = `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
-    `--name-fs:${(5.2 * fs).toFixed(2)}mm;--subj-fs:${(3.0 * fs).toFixed(2)}mm;` +
-    `--meta-fs:${(2.5 * fs).toFixed(2)}mm;--r:${t.radius}mm;--gfx-scale:0.8;`;
+    `--name-fs:${(5.2 * fs * so.nameSize).toFixed(2)}mm;--subj-fs:${(3.0 * fs * so.subjSize).toFixed(2)}mm;` +
+    `--meta-fs:${(2.5 * fs * so.metaSize).toFixed(2)}mm;--r:${t.radius}mm;--gfx-scale:0.8;`;
   const text = row ? graphicTextHtml(row, colour) : "";
   const fit = des.fit === "fill" ? " style=\"object-fit:fill;\"" : "";
   return (
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
       `<img class="gfx-img" src="${graphicSrc(des)}" alt="${esc(des.name)} label design"${fit}>` +
-      (text ? `<div class="gfx-text" style="top:${textTop}%;height:${textH}%;color:${colour};">${text}</div>` : "") +
+      (text ? `<div class="gfx-text${fontCls}" style="top:${textTop}%;height:${textH}%;color:${colour};">${text}</div>` : "") +
     `</div>`
   );
 }
@@ -1080,10 +1096,18 @@ function renderAll() {
   updateSkippedNote();
   renderPreview();
   renderPrintRoot();
-  /* Keep the Step 4 example thumbnails in step with the subject-highlight
-   * option so the preview always matches what will print. */
+  /* Keep the Step 4 example thumbnails in step with the subject-highlight,
+   * font and text-size options so the preview always matches the print. */
   const hlOn = !!state.opts.subjectHighlight;
-  document.querySelectorAll(".l-prev").forEach((el) => el.classList.toggle("subj-hl", hlOn));
+  document.querySelectorAll(".l-prev").forEach((el) => {
+    el.classList.toggle("subj-hl", hlOn);
+    FONT_KEYS.forEach((k) => el.classList.toggle("f-" + k, k === state.opts.font));
+    if (el.style && typeof el.style.setProperty === "function") {
+      el.style.setProperty("--p-name", String(state.opts.nameSize));
+      el.style.setProperty("--p-subj", String(state.opts.subjSize));
+      el.style.setProperty("--p-meta", String(state.opts.metaSize));
+    }
+  });
   const isMarking = state.layout === "marking";
   const hasData = state.rows.length > 0 || isMarking;
   $("#printBtn").disabled = !hasData;
@@ -1099,6 +1123,198 @@ function renderAll() {
             : (t.fullBleed
                 ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
                 : "Choose 'Save as PDF' in the print dialog for a printable file.")));
+}
+
+/* =====================================================================
+ *  Options sync + setup export / import
+ *  Setup = layout, template, options, marking content and logo, saved
+ *  as a JSON file the teacher downloads and reloads later. Nothing is
+ *  stored online — the file never leaves the browser.
+ * ===================================================================== */
+const OPT_CHECKBOX_MAP = {
+  optSchoolTop: "showSchoolTop", optClassName: "showClassName",
+  optSubject: "showSubject", optYearGroup: "showYearGroup",
+  optGuides: "showGuides", optColor: "color", optSkipBlanks: "skipBlanks",
+  optColourCode: "colourCode", optSubjectHl: "subjectHighlight",
+};
+
+/* Push current banner values back into the marking editor fields.
+ * Value-sync only — listeners are wired once in initEvents. */
+function syncMarkingInputs() {
+  [["#mkTitle", "title"], ["#mkChar", "character"], ["#mkVocab", "vocab"]].forEach(([sel, key]) => {
+    const el = $(sel);
+    if (el) el.value = state.banner[key] || "";
+  });
+  [1, 2, 3, 4].forEach((i) => {
+    const el = $("#mkWilf" + i);
+    if (el) el.value = (state.banner.wilf && state.banner.wilf[i - 1]) || "";
+  });
+  const showWilf = $("#mkShowWilf");
+  if (showWilf) showWilf.checked = !!state.banner.showWilf;
+  const showCircle = $("#mkShowCircle");
+  if (showCircle) showCircle.checked = !!state.banner.showCircle;
+  const clubBtn = $("#mkClubBtn");
+  if (clubBtn) clubBtn.textContent = state.banner.clubLogo ? "Change badge…" : "Club badge…";
+  const clubClear = $("#mkClubClear");
+  if (clubClear) clubClear.hidden = !state.banner.clubLogo;
+  const storyBtn = $("#mkStoryBtn");
+  if (storyBtn) storyBtn.textContent = state.banner.storyImage ? "Change story image…" : "Story image…";
+  const storyClear = $("#mkStoryClear");
+  if (storyClear) storyClear.hidden = !state.banner.storyImage;
+}
+
+function renderMarkingEditor() {
+  const ed = $("#markingEditor");
+  if (ed) ed.hidden = state.layout !== "marking";
+}
+
+/* Refresh the logo upload row after a setup import. */
+function refreshLogoRow() {
+  const s = document.querySelector("#logoUploadRow");
+  if (!s) return;
+  s.innerHTML = "";
+  addLogoRow();
+}
+
+/* Push the whole state into every Step 4 control (used after an import). */
+function syncControlsFromState() {
+  const sel = $("#layoutSelect");
+  if (sel) sel.value = state.layout;
+  document.querySelectorAll(".layout-card").forEach((c) => {
+    const on = c.dataset.layout === state.layout;
+    c.classList.toggle("selected", on);
+    c.setAttribute("aria-checked", on ? "true" : "false");
+  });
+  Object.keys(OPT_CHECKBOX_MAP).forEach((id) => {
+    const el = $(`#${id}`);
+    if (el) el.checked = state.opts[OPT_CHECKBOX_MAP[id]];
+  });
+  const cf = $("#colourFieldSelect");
+  if (cf) {
+    cf.value = state.opts.colourField;
+    cf.disabled = !state.opts.colourCode;
+  }
+  const ls = $("#logoSizeSelect");
+  if (ls) ls.value = state.opts.logoSize;
+  const fSel = $("#fontSelect");
+  if (fSel) fSel.value = state.opts.font || "";
+  [["#sizeName", "nameSize"], ["#sizeSubj", "subjSize"], ["#sizeMeta", "metaSize"]].forEach(([id, key]) => {
+    const el = $(id);
+    if (el) el.value = String(state.opts[key]);
+  });
+  const sort = $("#sortSelect");
+  if (sort) sort.value = state.sort;
+  renderMarkingEditor();
+  syncMarkingInputs();
+  refreshLogoRow();
+}
+
+function exportSetup() {
+  return {
+    app: "edu-label-maker",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    layout: state.layout,
+    template: state.template,
+    sort: state.sort,
+    opts: Object.assign({}, state.opts),
+    banner: Object.assign({}, state.banner, { wilf: (state.banner.wilf || []).slice() }),
+    logoDataUrl: state.logoDataUrl || null,
+  };
+}
+
+/* Apply an imported setup. Returns "" on success or a short error
+ * message. Unknown or malformed fields are ignored (current value kept)
+ * so files from older/newer versions never break the page. */
+function applySetup(data) {
+  if (!data || typeof data !== "object" || data.app !== "edu-label-maker") {
+    return "That file wasn't exported from this label maker.";
+  }
+  if (LAYOUT_KEYS.includes(data.layout)) state.layout = data.layout;
+  if (data.template && AVERY_TEMPLATES[data.template]) state.template = data.template;
+  if (["none", "first", "surname"].includes(data.sort)) state.sort = data.sort;
+  const opts = data.opts;
+  if (opts && typeof opts === "object") {
+    Object.keys(OPT_CHECKBOX_MAP).forEach((id) => {
+      const k = OPT_CHECKBOX_MAP[id];
+      if (typeof opts[k] === "boolean") state.opts[k] = opts[k];
+    });
+    if (["name", "subject", "meta", "all"].includes(opts.colourField)) state.opts.colourField = opts.colourField;
+    if (["std", "lg", "xl"].includes(opts.logoSize)) state.opts.logoSize = opts.logoSize;
+    if (FONT_KEYS.includes(opts.font) || opts.font === "") state.opts.font = opts.font;
+    ["nameSize", "subjSize", "metaSize"].forEach((k) => {
+      const v = Number(opts[k]);
+      if (Number.isFinite(v) && v >= 0.5 && v <= 2) state.opts[k] = v;
+    });
+  }
+  const b = data.banner;
+  if (b && typeof b === "object") {
+    ["title", "character", "vocab"].forEach((k) => { if (typeof b[k] === "string") state.banner[k] = b[k]; });
+    if (typeof b.showWilf === "boolean") state.banner.showWilf = b.showWilf;
+    if (typeof b.showCircle === "boolean") state.banner.showCircle = b.showCircle;
+    if (Array.isArray(b.wilf)) {
+      state.banner.wilf = [0, 1, 2, 3].map((i) => (typeof b.wilf[i] === "string" ? b.wilf[i] : ""));
+    }
+    if (typeof b.clubLogo === "string" || b.clubLogo === null) state.banner.clubLogo = b.clubLogo;
+    if (typeof b.storyImage === "string" || b.storyImage === null) state.banner.storyImage = b.storyImage;
+  }
+  if (typeof data.logoDataUrl === "string" || data.logoDataUrl === null) state.logoDataUrl = data.logoDataUrl;
+
+  syncControlsFromState();
+  renderTemplateList();
+  renderAll();
+  return "";
+}
+
+/* Optional logo upload (client-side only — the image is read into the
+ * page and never uploaded anywhere). */
+let logoInput = null;
+function initLogoUpload() {
+  if (logoInput) return;
+  logoInput = document.createElement("input");
+  logoInput.type = "file";
+  logoInput.accept = "image/*";
+  logoInput.hidden = true;
+  document.body.appendChild(logoInput);
+  logoInput.addEventListener("change", () => {
+    const f = logoInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.logoDataUrl = reader.result;
+      renderAll();
+    };
+    reader.readAsDataURL(f);
+  });
+  addLogoRow();
+}
+function addLogoRow() {
+  if (SCHOOL_CONFIG.logo) return;
+  const s = document.querySelector("#logoUploadRow");
+  if (!s) return;
+  const row = document.createElement("div");
+  row.style.marginTop = "8px";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn-ghost btn-sm";
+  btn.style.marginTop = "0";
+  btn.textContent = state.logoDataUrl ? "🖼️ Change logo…" : "🖼️ Add a logo…";
+  btn.addEventListener("click", () => logoInput.click());
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "btn-ghost btn-sm";
+  clear.style.marginTop = "0";
+  clear.textContent = "Remove";
+  clear.style.display = state.logoDataUrl ? "" : "none";
+  clear.addEventListener("click", () => {
+    state.logoDataUrl = null;
+    row.remove();
+    renderAll();
+    addLogoRow();
+  });
+  row.appendChild(btn);
+  row.appendChild(clear);
+  s.appendChild(row);
 }
 
 /* =====================================================================
@@ -1242,17 +1458,11 @@ function initEvents() {
   }
 
   state.columns = [];
-  ["optSchoolTop", "optClassName", "optSubject", "optYearGroup",
-   "optGuides", "optColor", "optSkipBlanks", "optColourCode", "optSubjectHl"].forEach((id) => {
-    const map = {
-      optSchoolTop: "showSchoolTop", optClassName: "showClassName",
-      optSubject: "showSubject", optYearGroup: "showYearGroup",
-      optGuides: "showGuides", optColor: "color", optSkipBlanks: "skipBlanks",
-      optColourCode: "colourCode", optSubjectHl: "subjectHighlight",
-    };
-    $(`#${id}`).checked = state.opts[map[id]];
+  Object.keys(OPT_CHECKBOX_MAP).forEach((id) => {
+    const key = OPT_CHECKBOX_MAP[id];
+    $(`#${id}`).checked = state.opts[key];
     $(`#${id}`).addEventListener("change", () => {
-      state.opts[map[id]] = $(`#${id}`).checked;
+      state.opts[key] = $(`#${id}`).checked;
       renderAll();
     });
   });
@@ -1291,31 +1501,23 @@ function initEvents() {
     [["#mkTitle", "title"], ["#mkChar", "character"], ["#mkVocab", "vocab"]].forEach(([sel, key]) => {
       const el = $(sel);
       if (!el) return;
-      el.value = state.banner[key] || "";
       el.addEventListener("input", () => { state.banner[key] = el.value; renderAll(); });
     });
     [1, 2, 3, 4].forEach((i) => {
       const el = $("#mkWilf" + i);
       if (!el) return;
-      el.value = (state.banner.wilf && state.banner.wilf[i - 1]) || "";
       el.addEventListener("input", () => { syncWilf(); renderAll(); });
     });
     const showWilf = $("#mkShowWilf"), showCircle = $("#mkShowCircle");
-    if (showWilf) { showWilf.checked = !!state.banner.showWilf; showWilf.addEventListener("change", () => { state.banner.showWilf = showWilf.checked; renderAll(); }); }
-    if (showCircle) { showCircle.checked = !!state.banner.showCircle; showCircle.addEventListener("change", () => { state.banner.showCircle = showCircle.checked; renderAll(); }); }
+    if (showWilf) showWilf.addEventListener("change", () => { state.banner.showWilf = showWilf.checked; renderAll(); });
+    if (showCircle) showCircle.addEventListener("change", () => { state.banner.showCircle = showCircle.checked; renderAll(); });
     const clubBtn = $("#mkClubBtn"), clubClear = $("#mkClubClear");
     const storyBtn = $("#mkStoryBtn"), storyClear = $("#mkStoryClear");
-    const syncBtns = () => {
-      if (clubBtn) clubBtn.textContent = state.banner.clubLogo ? "Change badge…" : "Club badge…";
-      if (clubClear) clubClear.style.display = state.banner.clubLogo ? "" : "none";
-      if (storyBtn) storyBtn.textContent = state.banner.storyImage ? "Change story image…" : "Story image…";
-      if (storyClear) storyClear.style.display = state.banner.storyImage ? "" : "none";
-    };
     const mkUpload = (fileInput, onChange) => fileInput.addEventListener("change", () => {
       const f = fileInput.files[0];
       if (!f) return;
       const r = new FileReader();
-      r.onload = () => { onChange(r.result); syncBtns(); renderAll(); };
+      r.onload = () => { onChange(r.result); syncMarkingInputs(); renderAll(); };
       r.readAsDataURL(f);
     });
     const clubInput = document.createElement("input");
@@ -1324,16 +1526,12 @@ function initEvents() {
     storyInput.type = "file"; storyInput.accept = "image/*"; storyInput.hidden = true;
     document.body.appendChild(clubInput); document.body.appendChild(storyInput);
     if (clubBtn) clubBtn.addEventListener("click", () => clubInput.click());
-    if (clubClear) clubClear.addEventListener("click", () => { state.banner.clubLogo = null; syncBtns(); renderAll(); });
+    if (clubClear) clubClear.addEventListener("click", () => { state.banner.clubLogo = null; syncMarkingInputs(); renderAll(); });
     if (storyBtn) storyBtn.addEventListener("click", () => storyInput.click());
-    if (storyClear) storyClear.addEventListener("click", () => { state.banner.storyImage = null; syncBtns(); renderAll(); });
+    if (storyClear) storyClear.addEventListener("click", () => { state.banner.storyImage = null; syncMarkingInputs(); renderAll(); });
     mkUpload(clubInput, (dataUrl) => { state.banner.clubLogo = dataUrl; });
     mkUpload(storyInput, (dataUrl) => { state.banner.storyImage = dataUrl; });
-    syncBtns();
-  };
-  const renderMarkingEditor = () => {
-    const ed = $("#markingEditor");
-    if (ed) ed.hidden = state.layout !== "marking";
+    syncMarkingInputs();
   };
   renderMarkingEditor();
   wireMarkingEditor();
@@ -1375,6 +1573,61 @@ function initEvents() {
     logoSizeSelect.addEventListener("change", () => {
       state.opts.logoSize = logoSizeSelect.value;
       renderAll();
+    });
+  }
+
+  /* Font family + per-line text sizes */
+  const fontSelect = $("#fontSelect");
+  if (fontSelect) {
+    fontSelect.value = state.opts.font || "";
+    fontSelect.addEventListener("change", () => {
+      state.opts.font = fontSelect.value;
+      renderAll();
+    });
+  }
+  [["#sizeName", "nameSize"], ["#sizeSubj", "subjSize"], ["#sizeMeta", "metaSize"]].forEach(([id, key]) => {
+    const el = $(id);
+    if (!el) return;
+    el.value = String(state.opts[key]);
+    el.addEventListener("change", () => {
+      const v = Number(el.value);
+      if (Number.isFinite(v)) { state.opts[key] = v; renderAll(); }
+    });
+  });
+
+  /* Export / import the whole setup as a small JSON file. */
+  const setupHint = $("#setupHint");
+  const exportBtn = $("#exportSetup");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(exportSetup(), null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "label-setup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (setupHint) setupHint.textContent = "Saved to your downloads folder.";
+    });
+  }
+  const importBtn = $("#importSetup"), importFile = $("#importSetupFile");
+  if (importBtn && importFile) {
+    importBtn.addEventListener("click", () => importFile.click());
+    importFile.addEventListener("change", () => {
+      const f = importFile.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        let msg;
+        try { msg = applySetup(JSON.parse(String(r.result))); }
+        catch (e) { msg = "That file isn't a valid setup file."; }
+        if (setupHint) setupHint.textContent = msg || "✓ Setup loaded — layout, text style and content updated.";
+        importFile.value = "";
+      };
+      r.onerror = () => { if (setupHint) setupHint.textContent = "Could not read that file."; };
+      r.readAsText(f);
     });
   }
 
@@ -1450,50 +1703,7 @@ function initEvents() {
 
   window.addEventListener("resize", () => { /* sheets are fixed-size, nothing to do */ });
 
-  /* optional logo upload (client-side only) */
-  const logoInput = document.createElement("input");
-  logoInput.type = "file";
-  logoInput.accept = "image/*";
-  logoInput.hidden = true;
-  document.body.appendChild(logoInput);
-  const addLogoRow = () => {
-    const s = document.querySelector("#logoUploadRow");
-    if (!s) return;
-    const row = document.createElement("div");
-    row.style.marginTop = "8px";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "btn-ghost btn-sm";
-    btn.style.marginTop = "0";
-    btn.textContent = state.logoDataUrl ? "🖼️ Change logo…" : "🖼️ Add a logo…";
-    btn.addEventListener("click", () => logoInput.click());
-    const clear = document.createElement("button");
-    clear.type = "button";
-    clear.className = "btn-ghost btn-sm";
-    clear.style.marginTop = "0";
-    clear.textContent = "Remove";
-    clear.style.display = state.logoDataUrl ? "" : "none";
-    clear.addEventListener("click", () => {
-      state.logoDataUrl = null;
-      row.remove();
-      renderAll();
-      addLogoRow();
-    });
-    row.appendChild(btn);
-    row.appendChild(clear);
-    s.appendChild(row);
-  };
-  if (!SCHOOL_CONFIG.logo) addLogoRow();
-  logoInput.addEventListener("change", () => {
-    const f = logoInput.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      state.logoDataUrl = reader.result;
-      renderAll();
-    };
-    reader.readAsDataURL(f);
-  });
+  initLogoUpload();
 }
 
 function readFile(f) {

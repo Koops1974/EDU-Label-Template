@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=17">
+<link rel="stylesheet" href="styles.css?v=18">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -262,6 +262,7 @@
         <option value="classic" selected>School / name / subject</option>
         <option value="badge">Badge style</option>
         <option value="minimal">Minimal sticker</option>
+        <option value="stack">Logo top</option>
         <option value="marking">WILF marking label</option>
       </select>
 
@@ -293,6 +294,17 @@
           <span class="layout-name">Minimal</span>
           <span class="layout-desc">Clean name &amp; subject</span>
         </button>
+        <button type="button" class="layout-card" data-layout="stack" role="radio" aria-checked="false">
+          <span class="l-prev l-prev-stack">
+            <span class="ps-logo"></span>
+            <span class="ps-school">School name</span>
+            <span class="ps-meta">Year 7 · 7A</span>
+            <span class="p-subj">Maths</span>
+            <span class="p-name">Emma Smith</span>
+          </span>
+          <span class="layout-name">Logo top</span>
+          <span class="layout-desc">Logo, school, class &amp; name</span>
+        </button>
         <button type="button" class="layout-card" data-layout="marking" role="radio" aria-checked="false">
           <span class="l-prev l-prev-marking">
             <span class="pm-head">
@@ -319,6 +331,46 @@
       </div>
 
       <label class="check" for="optSubjectHl"><input type="checkbox" id="optSubjectHl" checked><span>Highlight the subject text with a soft background (all label styles)</span></label>
+
+      <div class="style-row">
+        <span class="style-row-label">Text style</span>
+        <span class="style-pick"><label for="fontSelect">Font</label>
+          <select id="fontSelect">
+            <option value="" selected>Default</option>
+            <option value="comic">Comic Sans MS</option>
+            <option value="georgia">Georgia</option>
+            <option value="verdana">Verdana</option>
+            <option value="trebuchet">Trebuchet MS</option>
+          </select>
+        </span>
+        <span class="style-pick"><label for="sizeName">Name</label>
+          <select id="sizeName">
+            <option value="0.7">×small</option>
+            <option value="0.85">small</option>
+            <option value="1" selected>normal</option>
+            <option value="1.15">large</option>
+            <option value="1.3">×large</option>
+          </select>
+        </span>
+        <span class="style-pick"><label for="sizeSubj">Subject</label>
+          <select id="sizeSubj">
+            <option value="0.7">×small</option>
+            <option value="0.85">small</option>
+            <option value="1" selected>normal</option>
+            <option value="1.15">large</option>
+            <option value="1.3">×large</option>
+          </select>
+        </span>
+        <span class="style-pick"><label for="sizeMeta">Class / year</label>
+          <select id="sizeMeta">
+            <option value="0.7">×small</option>
+            <option value="0.85">small</option>
+            <option value="1" selected>normal</option>
+            <option value="1.15">large</option>
+            <option value="1.3">×large</option>
+          </select>
+        </span>
+      </div>
 
       <div class="logo-size-row">
         <label for="logoSizeSelect">Logo size</label>
@@ -509,7 +561,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=23"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

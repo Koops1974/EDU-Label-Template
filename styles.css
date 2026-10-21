@@ -336,14 +336,27 @@ a.btn-soft { text-decoration: none; text-align: center; }
   font-size: 13px; background: #fff; color: var(--body); cursor: pointer;
 }
 
+/* ---------- Text style row (font family + per-line sizes) ---------- */
+.style-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.style-row-label { font-size: 13px; color: var(--body); font-weight: 700; }
+.style-pick { display: flex; align-items: center; gap: 6px; }
+.style-pick label { font-size: 13px; color: var(--muted); font-weight: 600; }
+.style-pick select {
+  padding: 7px 8px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; background: #fff; color: var(--body); cursor: pointer;
+}
+
+/* ---------- Setup export / import ---------- */
+.setup-io { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
 /* ---------- Mini label previews (decorative, screen only) ---------- */
 .l-prev {
   display: flex; flex-direction: column; gap: 4px; height: 82px;
   padding: 9px 8px; border: 1px solid #e3ecf8; border-radius: 8px; background: #fff; overflow: hidden;
 }
-.l-prev .p-name { font-size: 11px; font-weight: 800; color: var(--ink); text-align: center; line-height: 1.1; }
+.l-prev .p-name { font-size: calc(11px * var(--p-name, 1)); font-weight: 800; color: var(--ink); text-align: center; line-height: 1.1; }
 .l-prev .p-subj {
-  font-size: 8px; font-weight: 700; color: var(--primary); text-align: center;
+  font-size: calc(8px * var(--p-subj, 1)); font-weight: 700; color: var(--primary); text-align: center;
   border-radius: 999px; padding: 2px 5px; align-self: center;
 }
 .l-prev.subj-hl .p-subj { background: rgba(29,78,216,.14); color: #1d3fa0; }
@@ -353,7 +366,7 @@ a.btn-soft { text-decoration: none; text-align: center; }
   padding: 2px 0; border-radius: 2px;
 }
 .l-prev-classic .p-name { margin-top: auto; }
-.l-prev-classic .p-meta { font-size: 7px; color: var(--muted); text-align: center; }
+.l-prev-classic .p-meta { font-size: calc(7px * var(--p-meta, 1)); color: var(--muted); text-align: center; }
 .l-prev-badge { align-items: center; }
 .l-prev-badge .p-badge {
   width: 24px; height: 24px; border-radius: 50%; margin-top: auto;
@@ -361,7 +374,17 @@ a.btn-soft { text-decoration: none; text-align: center; }
   display: flex; align-items: center; justify-content: center;
 }
 .l-prev-minimal { justify-content: center; gap: 6px; }
-.l-prev-minimal .p-subj { font-size: 9px; padding: 3px 8px; }
+.l-prev-minimal .p-subj { font-size: calc(9px * var(--p-subj, 1)); padding: 3px 8px; }
+.l-prev-stack { gap: 3px; align-items: center; }
+.l-prev-stack .ps-logo {
+  width: 26px; height: 12px; border: 1.5px solid var(--ink); border-radius: 3px;
+}
+.l-prev-stack .ps-school {
+  font-size: 7px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  text-align: center; color: var(--ink);
+}
+.l-prev-stack .ps-meta { font-size: calc(7px * var(--p-meta, 1)); color: var(--muted); text-align: center; }
+.l-prev-stack .p-name { margin-top: auto; }
 .l-prev-marking { gap: 5px; }
 .l-prev-marking .pm-head { display: flex; gap: 5px; align-items: flex-start; }
 .l-prev-marking .pm-logo { width: 13px; height: 13px; flex: none; border: 1px solid var(--ink); border-radius: 2px; }
@@ -536,6 +559,29 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .label-inner.badge .lbl-school-text { max-width: 100%; }
 .label-inner.minimal .label-school { display: none; }
 .label-inner.minimal .label-meta { display: none; }
+
+/* Optional font families — system fonts only, so they always print */
+.f-comic { font-family: "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive; }
+.f-georgia { font-family: Georgia, "Times New Roman", serif; }
+.f-verdana { font-family: Verdana, Geneva, sans-serif; }
+.f-trebuchet { font-family: "Trebuchet MS", Tahoma, sans-serif; }
+
+/* Logo-top ("stack") layout: logo (only if one is set — the row
+ * collapses when there isn't one) → school → year · class → subject →
+ * name at the bottom. The accent bar is not used in this layout. */
+.label-inner.stack .label-school {
+  order: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1mm; white-space: normal;
+  background: none; color: inherit;
+  padding: 6% 6% 0;
+}
+.label-inner.stack .lbl-logo {
+  height: calc(var(--school-fs, 3mm) * 3.2 * var(--logo-mult, 1));
+}
+.label-inner.stack .label-meta { order: 2; }
+.label-inner.stack .label-subject { order: 3; }
+.label-inner.stack .label-name { order: 4; padding-bottom: 2%; }
 .app-footer {
   background: #0b1b3a; color: #b9c9e2; width: 100%;
   padding: 15px 24px 18px; font-size: 12px;

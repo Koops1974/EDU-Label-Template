@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup };"
   );
 eval(appSrc);
 
@@ -156,6 +156,93 @@ state.opts.subjectHighlight = false;
 const hlOffSheet = __app.buildSheets(false)[0];
 check(!hlOffSheet.includes("subj-hl"), "highlight removed from every label when the option is off");
 state.opts.subjectHighlight = true;
+
+console.log("Logo-top (stack) layout:");
+{
+  const savedLayout = state.layout, savedLogo = state.logoDataUrl;
+  state.layout = "stack";
+  const srow = { "Pupil Name": "Aarav Patel", "Class/Form": "7A", Subject: "Mathematics", "Year Group": "Year 7" };
+  const c = __app.labelContentHtml(srow);
+  check(c.metaPart.includes("Year 7 · 7A"), `stack meta reads "Year 7 · 7A", got: ${c.metaPart.replace(/ style="[^"]*"/g, "")}`);
+  check(!c.metaPart.includes("Class:"), "stack meta drops the Class: prefix");
+  const cell = __app.buildLabelCell(srow, AVERY_TEMPLATES.L7160, 0);
+  check(/class="label-inner stack/.test(cell), "stack layout class on the label");
+  check(cell.indexOf("label-school") > -1 && cell.indexOf("label-meta") > -1 &&
+        cell.indexOf("label-subject") > -1 && cell.indexOf("label-name") > -1,
+        "stack label has school, class/year, subject and name lines");
+  check(!cell.includes("lbl-logo"), "logo space collapses when no logo is set");
+  state.logoDataUrl = "data:image/png;base64,AAAA";
+  const cellLogo = __app.buildLabelCell(srow, AVERY_TEMPLATES.L7160, 0);
+  check(cellLogo.includes('class="lbl-logo"'), "logo renders when one is set");
+  state.logoDataUrl = savedLogo;
+  state.layout = "classic";
+  const c2 = __app.labelContentHtml(srow);
+  check(c2.metaPart.includes("Class:7A"), "classic meta keeps the Class: prefix");
+  state.layout = savedLayout;
+}
+
+console.log("Font family option:");
+{
+  const savedFont = state.opts.font;
+  state.opts.font = "comic";
+  const fCell = __app.buildLabelCell(sample[0], AVERY_TEMPLATES.L7160, 0);
+  check(/class="label-inner [^"]*f-comic/.test(fCell), "font class applied to normal labels");
+  const fMark = __app.buildMarkingCell(AVERY_TEMPLATES.L7162, 0);
+  check(fMark.includes('label-inner marking f-comic'), "font class applied to the marking label");
+  state.opts.font = "";
+  const dCell = __app.buildLabelCell(sample[0], AVERY_TEMPLATES.L7160, 0);
+  check(!/f-comic|f-georgia|f-verdana|f-trebuchet/.test(dCell), "no font class with the default font");
+  state.opts.font = savedFont;
+}
+
+console.log("Per-line text sizes:");
+{
+  const saved = { n: state.opts.nameSize, s: state.opts.subjSize, m: state.opts.metaSize };
+  state.opts.nameSize = 1.3; state.opts.subjSize = 0.85; state.opts.metaSize = 1.15;
+  const szCell = __app.buildLabelCell(sample[0], AVERY_TEMPLATES.L7160, 0);
+  check(szCell.includes("--name-fs:6.76mm;"), "name size 1.3 → --name-fs:6.76mm");
+  check(szCell.includes("--subj-fs:2.55mm;"), "subject size 0.85 → --subj-fs:2.55mm");
+  check(szCell.includes("--meta-fs:2.88mm;"), "class/year size 1.15 → --meta-fs:2.88mm");
+  state.opts.nameSize = 1; state.opts.subjSize = 1; state.opts.metaSize = 1;
+  const dCell = __app.buildLabelCell(sample[0], AVERY_TEMPLATES.L7160, 0);
+  check(dCell.includes("--name-fs:5.20mm;") && dCell.includes("--subj-fs:3.00mm;") && dCell.includes("--meta-fs:2.50mm;"),
+        "normal sizes restore the defaults");
+  state.opts.nameSize = saved.n; state.opts.subjSize = saved.s; state.opts.metaSize = saved.m;
+}
+
+console.log("Setup export / import:");
+{
+  const saved = {
+    layout: state.layout, template: state.template,
+    font: state.opts.font, nameSize: state.opts.nameSize,
+    title: state.banner.title, wilf: (state.banner.wilf || []).slice(),
+  };
+  state.layout = "stack"; state.template = "L7165"; state.opts.font = "georgia";
+  state.opts.nameSize = 1.15;
+  state.banner.title = "Story club"; state.banner.wilf = ["A", "B", "", ""];
+  const payload = __app.exportSetup();
+  check(payload.app === "edu-label-maker" && payload.version === 1, "export identifies the app and version");
+  check(payload.layout === "stack" && payload.template === "L7165", "export carries layout + template");
+  check(payload.opts.font === "georgia" && payload.opts.nameSize === 1.15, "export carries font + size options");
+  check(payload.banner.title === "Story club" && payload.banner.wilf[1] === "B", "export carries banner content");
+  state.layout = "classic"; state.template = "L7160"; state.opts.font = "";
+  state.opts.nameSize = 1; state.banner.title = ""; state.banner.wilf = ["", "", "", ""];
+  const err = __app.applySetup(JSON.parse(JSON.stringify(payload)));
+  check(err === "", `imported file applies cleanly (got "${err}")`);
+  check(state.layout === "stack" && state.template === "L7165", "layout + template restored");
+  check(state.opts.font === "georgia" && state.opts.nameSize === 1.15, "font + size restored");
+  check(state.banner.title === "Story club" && state.banner.wilf[0] === "A", "banner content restored");
+  const err2 = __app.applySetup({ app: "something-else" });
+  check(typeof err2 === "string" && err2.length > 0, "a foreign file is rejected with a message");
+  const junk = JSON.parse(JSON.stringify(payload));
+  junk.opts.font = "wingdings"; junk.template = "NOPE"; junk.opts.nameSize = 99;
+  const err3 = __app.applySetup(junk);
+  check(err3 === "" && state.opts.font === "georgia" && state.template === "L7165" && state.opts.nameSize === 1.15,
+        "junk values in a file are ignored");
+  state.layout = saved.layout; state.template = saved.template;
+  state.opts.font = saved.font; state.opts.nameSize = saved.nameSize;
+  state.banner.title = saved.title; state.banner.wilf = saved.wilf;
+}
 
 console.log("Calibration test sheet:");
 const cal = __app.calibrationSheetHtml();
