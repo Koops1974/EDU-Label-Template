@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=18">
+<link rel="stylesheet" href="styles.css?v=19">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -77,6 +77,10 @@
       </div>
     </div>
     <nav class="header-actions" aria-label="Header actions">
+      <button type="button" class="header-link" id="exportSetup" title="Download your layout, fonts and content as a file">Export setup…</button>
+      <button type="button" class="header-link" id="importSetup" title="Load a saved setup file">Import setup…</button>
+      <input type="file" id="importSetupFile" accept="application/json,.json" hidden>
+      <span class="header-hint" id="setupHint"></span>
       <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Printing guide</a>
       <a class="header-link" href="feedback.html">💬 Feedback</a>
       <a class="header-link" href="https://ko-fi.com/Q2K727N8IU" target="_blank" rel="noopener">☕ Buy me a coffee</a>
@@ -477,9 +481,6 @@
       </ol>
     </div>
 
-    <button class="btn-primary" id="printBtn">🖨️ Print / Save as PDF</button>
-    <p class="print-note" id="printNote">No preview? Upload a CSV first.</p>
-
     <div class="privacy-strip">
       <span>🔒 Your pupil data stays on your device — nothing is uploaded.</span>
       <a href="print-guide.html" target="_blank" rel="noopener">Print-settings guide</a>
@@ -495,6 +496,10 @@
     <div class="preview-stage">
       <span class="a4-badge">A4 · actual size</span>
       <div id="sheetContainer" class="sheet-scroll"></div>
+    </div>
+    <div class="preview-foot">
+      <button class="btn-primary" id="printBtn">🖨️ Print / Save as PDF</button>
+      <p class="print-note" id="printNote">No preview? Upload a CSV first.</p>
     </div>
   </section>
 
