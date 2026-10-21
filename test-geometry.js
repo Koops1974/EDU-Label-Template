@@ -146,6 +146,17 @@ state.opts.logoSize = "std";
 const stdSheet = __app.buildSheets(false)[0];
 check(stdSheet.includes("--logo-mult:1;"), "Standard logo → --logo-mult:1");
 
+console.log("Subject highlight option:");
+state.opts.subjectHighlight = true;
+const hlSheet = __app.buildSheets(false)[0];
+const innerCount = (hlSheet.match(/class="label-inner/g) || []).length;
+const hlCount = (hlSheet.match(/subj-hl/g) || []).length;
+check(innerCount > 0 && hlCount === innerCount, `highlight class on all ${innerCount} labels when the option is on`);
+state.opts.subjectHighlight = false;
+const hlOffSheet = __app.buildSheets(false)[0];
+check(!hlOffSheet.includes("subj-hl"), "highlight removed from every label when the option is off");
+state.opts.subjectHighlight = true;
+
 console.log("Calibration test sheet:");
 const cal = __app.calibrationSheetHtml();
 check((cal.match(/class="cal-tick"/g) || []).length === 30, "left ruler has 30 ticks (0..290mm)");
@@ -221,7 +232,7 @@ const metaSheet = __app.buildSheets(false)[0];
 check(metaSheet.includes('class="label-meta" style="color:#1d4ed8;"'), "colour targets Class/year row when selected");
 state.opts.colourField = "all";
 const allSheet = __app.buildSheets(false)[0];
-check(allSheet.includes('label-inner classic color" style="color:#1d4ed8;'), "colour targets whole label text when selected");
+check(allSheet.includes('label-inner classic color subj-hl" style="color:#1d4ed8;'), "colour targets whole label text when selected");
 state.opts.colourField = "name";
 state.opts.colourCode = false;
 

@@ -344,8 +344,9 @@ a.btn-soft { text-decoration: none; text-align: center; }
 .l-prev .p-name { font-size: 11px; font-weight: 800; color: var(--ink); text-align: center; line-height: 1.1; }
 .l-prev .p-subj {
   font-size: 8px; font-weight: 700; color: var(--primary); text-align: center;
-  background: rgba(29,78,216,.1); border-radius: 999px; padding: 2px 5px; align-self: center;
+  border-radius: 999px; padding: 2px 5px; align-self: center;
 }
+.l-prev.subj-hl .p-subj { background: rgba(29,78,216,.14); color: #1d3fa0; }
 .l-prev-classic .p-bar {
   background: var(--primary); color: #fff; font-size: 6px; font-weight: 800;
   letter-spacing: .08em; text-transform: uppercase; text-align: center;
@@ -359,7 +360,6 @@ a.btn-soft { text-decoration: none; text-align: center; }
   background: var(--primary); color: #fff; font-size: 8px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
-.l-prev-badge .p-subj { background: rgba(29,78,216,.14); color: #1d3fa0; }
 .l-prev-minimal { justify-content: center; gap: 6px; }
 .l-prev-minimal .p-subj { font-size: 9px; padding: 3px 8px; }
 .l-prev-marking { gap: 5px; }
@@ -522,7 +522,8 @@ a.btn-soft { text-decoration: none; text-align: center; }
 
 /* Different arrangement modes */
 .label-inner.badge .label-name { align-items: center; padding-bottom: 2%; }
-.label-inner.badge .label-subject {
+/* Subject highlight — option-driven, applies to every label style */
+.label-inner.subj-hl .label-subject {
   background: var(--accent-soft, #e2e8f0); border-radius: 99px; margin: 0 8% 4%;
   padding: 1.5% 4%;
 }

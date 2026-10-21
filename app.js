@@ -142,6 +142,7 @@ const state = {
     colourCode: false,
     colourField: "name",
     logoSize: "std",
+    subjectHighlight: true,
     showSchoolTop: SCHOOL_CONFIG.label.showSchoolNameTop,
     showClassName: SCHOOL_CONFIG.label.showClassName,
     showSubject: SCHOOL_CONFIG.label.showSubject,
@@ -717,11 +718,12 @@ function buildLabelCell(row, t, cellIndex) {
 
   const colorCls = state.opts.color ? " color" : "";
   const guidesCls = state.opts.showGuides ? " guides" : "";
+  const hlCls = state.opts.subjectHighlight ? " subj-hl" : "";
 
   return (
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${labelH.toFixed(2)}mm;${cssVars}">` +
-      `<div class="label-inner${layoutCls}${colorCls}" style="color:${outerTextColor};">` +
+      `<div class="label-inner${layoutCls}${colorCls}${hlCls}" style="color:${outerTextColor};">` +
         `${schoolTop}${namePart}${subjectPart}${metaPart}` +
       `</div>` +
     `</div>`
@@ -1078,6 +1080,10 @@ function renderAll() {
   updateSkippedNote();
   renderPreview();
   renderPrintRoot();
+  /* Keep the Step 4 example thumbnails in step with the subject-highlight
+   * option so the preview always matches what will print. */
+  const hlOn = !!state.opts.subjectHighlight;
+  document.querySelectorAll(".l-prev").forEach((el) => el.classList.toggle("subj-hl", hlOn));
   const isMarking = state.layout === "marking";
   const hasData = state.rows.length > 0 || isMarking;
   $("#printBtn").disabled = !hasData;
@@ -1237,12 +1243,12 @@ function initEvents() {
 
   state.columns = [];
   ["optSchoolTop", "optClassName", "optSubject", "optYearGroup",
-   "optGuides", "optColor", "optSkipBlanks", "optColourCode"].forEach((id) => {
+   "optGuides", "optColor", "optSkipBlanks", "optColourCode", "optSubjectHl"].forEach((id) => {
     const map = {
       optSchoolTop: "showSchoolTop", optClassName: "showClassName",
       optSubject: "showSubject", optYearGroup: "showYearGroup",
       optGuides: "showGuides", optColor: "color", optSkipBlanks: "skipBlanks",
-      optColourCode: "colourCode",
+      optColourCode: "colourCode", optSubjectHl: "subjectHighlight",
     };
     $(`#${id}`).checked = state.opts[map[id]];
     $(`#${id}`).addEventListener("change", () => {
