@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=19">
+<link rel="stylesheet" href="styles.css?v=20">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -105,10 +105,30 @@
       <p class="card-sub">Four steps to printable label sheets.</p>
     </div>
 
-    <!-- Step 1 · Add pupils -->
-    <section class="step" aria-label="Step 1, Add pupils">
+    <div class="step-tabs" role="tablist" aria-label="Label maker steps">
+      <button class="step-tab is-active" id="stepTab1" type="button" role="tab" aria-selected="true" aria-controls="stepPanel1" data-panel="stepPanel1">
+        <span class="tab-label"><span class="tab-num">1</span>Data</span>
+        <span class="tab-chip" id="chipData">No list yet</span>
+      </button>
+      <button class="step-tab" id="stepTab2" type="button" role="tab" aria-selected="false" aria-controls="stepPanel2" data-panel="stepPanel2">
+        <span class="tab-label"><span class="tab-num">2</span>Sheet</span>
+        <span class="tab-chip" id="chipSheet">L7160 · 21/sheet</span>
+      </button>
+      <button class="step-tab" id="stepTab3" type="button" role="tab" aria-selected="false" aria-controls="stepPanel3" data-panel="stepPanel3">
+        <span class="tab-label"><span class="tab-num">3</span>Design</span>
+        <span class="tab-chip" id="chipDesign">Classic · Default</span>
+      </button>
+      <button class="step-tab" id="stepTab4" type="button" role="tab" aria-selected="false" aria-controls="stepPanel4" data-panel="stepPanel4">
+        <span class="tab-label"><span class="tab-num">4</span>Print</span>
+        <span class="tab-chip" id="chipPrint">Offset +0 +0 mm</span>
+      </button>
+    </div>
+
+    <div class="step-panel" id="stepPanel1" role="tabpanel" aria-labelledby="stepTab1">
+
+    <!-- Data tab · Add pupils -->
+    <section class="step" aria-label="Add pupils">
       <div class="step-head">
-        <span class="step-num">1</span>
         <h3 class="step-title">Add your pupil or class list</h3>
       </div>
 
@@ -153,10 +173,9 @@
       <p class="skipped-note" id="skippedNote" hidden></p>
     </section>
 
-    <!-- Step 2 · Map columns -->
+    <!-- Data tab · Map columns -->
     <section class="step" id="mappingSection" hidden>
       <div class="step-head">
-        <span class="step-num">2</span>
         <h3 class="step-title">Map your columns</h3>
       </div>
       <details class="adv-details" id="mapDetails">
@@ -190,21 +209,25 @@
       </details>
       </details>
     </section>
+    </div><!-- /stepPanel1 -->
 
-    <!-- Step 3 · Choose sheet -->
-    <section class="step" aria-label="Step 3, Choose label sheet">
+    <div class="step-panel" id="stepPanel2" role="tabpanel" aria-labelledby="stepTab2" hidden>
+
+    <!-- Sheet tab · Choose sheet -->
+    <section class="step" aria-label="Choose label sheet">
       <div class="step-head">
-        <span class="step-num">3</span>
         <h3 class="step-title">Choose your label sheet</h3>
       </div>
       <div id="templateList" class="template-list" role="radiogroup" aria-label="Label templates"></div>
     </section>
+    </div><!-- /stepPanel2 -->
+
+    <div class="step-panel" id="stepPanel3" role="tabpanel" aria-labelledby="stepTab3" hidden>
 
     <!-- Graphic label designs (collapsible) -->
     <section class="step gfx-step" aria-label="Graphic label designs">
       <details class="gfx-details">
         <summary class="step-head gfx-summary">
-          <span class="step-num">3b</span>
           <h3 class="step-title">Graphic label designs</h3>
           <span class="gfx-chev" aria-hidden="true"></span>
         </summary>
@@ -255,10 +278,9 @@
       </details>
     </section>
 
-    <!-- Step 4 · Label style -->
-    <section class="step" aria-label="Step 4, Label style">
+    <!-- Design tab · Label style -->
+    <section class="step" aria-label="Label style">
       <div class="step-head">
-        <span class="step-num">4</span>
         <h3 class="step-title">Customise your labels</h3>
       </div>
 
@@ -425,12 +447,9 @@
       </div>
     </section>
 
-    <!-- Advanced printing options -->
-    <details class="adv-details">
-      <summary>Advanced printing options</summary>
-      <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
-      <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
-      <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
+    <!-- Colour &amp; text options (design-time choices) -->
+    <details class="adv-details" id="colourCodeDetails">
+      <summary>Colour &amp; text options</summary>
       <label class="check"><input type="checkbox" id="optColourCode"><span>Colour-code text from a colour column (e.g. "blue", "orange")</span></label>
       <div class="colour-row" id="colourFieldRow">
         <label for="colourFieldSelect">Colour applies to</label>
@@ -441,6 +460,17 @@
           <option value="all">Whole label text</option>
         </select>
       </div>
+    </details>
+    </div><!-- /stepPanel3 -->
+
+    <div class="step-panel" id="stepPanel4" role="tabpanel" aria-labelledby="stepTab4" hidden>
+
+    <!-- Advanced printing options -->
+    <details class="adv-details">
+      <summary>Advanced printing options</summary>
+      <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
+      <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
+      <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
 
       <div class="colour-row">
         <label for="labelBarColor">School strip colour</label>
@@ -470,6 +500,7 @@
         <p class="cal-status" id="calStatus"></p>
       </div>
     </details>
+    </div><!-- /stepPanel4 -->
 
     <!-- How to make your labels -->
     <div class="about-block">
@@ -566,7 +597,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=23"></script>
+<script src="app.js?v=24"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

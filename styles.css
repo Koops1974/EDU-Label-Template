@@ -139,15 +139,45 @@ button.header-link:active { transform: translateY(1px); }
 .panel a:not([class]), .use-foot a { color: var(--primary); text-decoration: underline; transition: color 150ms ease; }
 .panel a:not([class]):hover, .use-foot a:hover { color: var(--primary-dark); }
 
-/* ---------- Numbered steps ---------- */
+/* ---------- Step tabs (wizard) + step sections ---------- */
 .step { margin-top: 26px; }
+.step-panel > .step:first-child { margin-top: 18px; }
 .step-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.step-num {
-  width: 26px; height: 26px; border-radius: 50%; flex: none;
-  background: var(--blue); color: #fff; font-size: 13px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center;
-}
 .step-title { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
+
+.step-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 6;
+  background: var(--panel);
+}
+.step-tab {
+  flex: 1 1 92px; min-width: 92px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 8px;
+  border: 0; border-bottom: 2.5px solid transparent;
+  background: transparent; border-radius: 8px 8px 0 0;
+  font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--muted);
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+.step-tab:hover { color: var(--ink); background: rgba(29, 78, 216, .06); }
+.step-tab.is-active {
+  color: var(--primary-dark); border-bottom-color: var(--primary);
+  background: rgba(29, 78, 216, .08);
+}
+.tab-label { display: flex; align-items: center; gap: 6px; }
+.tab-num {
+  width: 18px; height: 18px; border-radius: 50%; flex: none;
+  background: var(--blue); color: #fff; font-size: 10.5px; font-weight: 800;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.step-tab.is-active .tab-num { background: var(--primary); }
+.tab-chip {
+  font-size: 10px; font-weight: 600; color: var(--muted);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 
 /* ---------- Upload ---------- */
 .upload-area {

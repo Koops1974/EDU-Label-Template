@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText };"
   );
 eval(appSrc);
 
@@ -242,6 +242,21 @@ console.log("Setup export / import:");
   state.layout = saved.layout; state.template = saved.template;
   state.opts.font = saved.font; state.opts.nameSize = saved.nameSize;
   state.banner.title = saved.title; state.banner.wilf = saved.wilf;
+}
+
+console.log("Step tabs (summary chips):");
+{
+  const saved = { t: state.template, l: state.layout, f: state.opts.font, rows: state.rows };
+  state.template = "L7160"; state.layout = "badge"; state.opts.font = "comic";
+  const chips = __app.chipsText();
+  check(chips.data.includes("3 pupils"), `data chip counts the loaded pupils ("${chips.data}")`);
+  check(chips.sheet === "L7160 · 21/sheet", `sheet chip shows the chosen sheet ("${chips.sheet}")`);
+  check(chips.design === "Badge · Comic Sans", `design chip shows style + font ("${chips.design}")`);
+  check(/^Offset [+-][\d.]+ [+-][\d.]+ mm$/.test(chips.print), `print chip shows the offset ("${chips.print}")`);
+  state.rows = [];
+  check(__app.chipsText().data === "No list yet", "data chip reports no list when the rows are empty");
+  state.template = saved.t; state.layout = saved.l;
+  state.opts.font = saved.f; state.rows = saved.rows;
 }
 
 console.log("Calibration test sheet:");

@@ -118,6 +118,7 @@ const state = {
   rowNumbers: [],
   skippedRows: [],
   partialNameRows: [],
+  fileName: "",
   mapping: { firstName: null, lastName: null, className: null, subject: null, yearGroup: null, school: null, colour: null },
   sort: "none",
   template: (SCHOOL_CONFIG.defaultTemplate in AVERY_TEMPLATES) ? SCHOOL_CONFIG.defaultTemplate : "L7160",
@@ -126,7 +127,7 @@ const state = {
   logoDataUrl: null,
   /* Marking / Story-club banner label (static, editable at print time) */
   banner: {
-    title: "",          // typed by the teacher in Step 4
+    title: "",          // typed by the teacher on the Design tab
     character: "",
     vocab: "",
     wilf: ["", "", "", ""],
@@ -1096,7 +1097,7 @@ function renderAll() {
   updateSkippedNote();
   renderPreview();
   renderPrintRoot();
-  /* Keep the Step 4 example thumbnails in step with the subject-highlight,
+  /* Keep the layout example thumbnails in step with the subject-highlight,
    * font and text-size options so the preview always matches the print. */
   const hlOn = !!state.opts.subjectHighlight;
   document.querySelectorAll(".l-prev").forEach((el) => {
@@ -1123,6 +1124,43 @@ function renderAll() {
             : (t.fullBleed
                 ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
                 : "Choose 'Save as PDF' in the print dialog for a printable file.")));
+  setStepChips();
+}
+
+/* =====================================================================
+ *  Step-tab summary chips (Data · Sheet · Design · Print)
+ *  Pure functions: the four small status lines under the wizard tabs.
+ * ===================================================================== */
+const LAYOUT_NAMES = {
+  classic: "Classic", badge: "Badge", minimal: "Minimal",
+  stack: "Logo top", marking: "WILF banner",
+};
+const FONT_NAMES = {
+  "": "Default", comic: "Comic Sans", georgia: "Georgia",
+  verdana: "Verdana", trebuchet: "Trebuchet",
+};
+
+function chipsText() {
+  const t = AVERY_TEMPLATES[state.template] || AVERY_TEMPLATES.L7160;
+  const cal = CAL();
+  const sign = (n) => (n < 0 ? "-" + Math.abs(n) : "+" + n);
+  return {
+    data: state.rows.length
+      ? "✓ " + state.rows.length + " pupils" + (state.fileName ? " · " + state.fileName : "")
+      : "No list yet",
+    sheet: t.code + " · " + (t.cols * t.rows) + "/sheet",
+    design: (LAYOUT_NAMES[state.layout] || "Classic") + " · " +
+            (FONT_NAMES[state.opts.font] || "Default"),
+    print: "Offset " + sign(cal.x) + " " + sign(cal.y) + " mm",
+  };
+}
+
+function setStepChips() {
+  const c = chipsText();
+  $("#chipData").textContent = c.data;
+  $("#chipSheet").textContent = c.sheet;
+  $("#chipDesign").textContent = c.design;
+  $("#chipPrint").textContent = c.print;
 }
 
 /* =====================================================================
@@ -1176,7 +1214,7 @@ function refreshLogoRow() {
   addLogoRow();
 }
 
-/* Push the whole state into every Step 4 control (used after an import). */
+/* Push the whole state into every Design-tab control (used after an import). */
 function syncControlsFromState() {
   const sel = $("#layoutSelect");
   if (sel) sel.value = state.layout;
@@ -1318,9 +1356,33 @@ function addLogoRow() {
 }
 
 /* =====================================================================
+ *  Step tabs — clicking a tab switches panels; entering a tab collapses
+ *  any expanded disclosure left open in the tabs you leave behind.
+ *  Runs only on explicit clicks (never mid-typing / mid-upload).
+ * ===================================================================== */
+function initTabs() {
+  document.querySelectorAll(".step-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.panel;
+      document.querySelectorAll(".step-tab").forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      document.querySelectorAll(".step-panel").forEach((p) => {
+        const on = p.id === target;
+        p.hidden = !on;
+        if (!on) p.querySelectorAll("details[open]").forEach((d) => { d.open = false; });
+      });
+    });
+  });
+}
+
+/* =====================================================================
  *  Events & wiring
  * ===================================================================== */
 function updateFileStatus(fileName, count, note) {
+  state.fileName = fileName || "";
   const s = $("#fileStatus");
   s.hidden = false;
   $("#fileStatusText").textContent =
@@ -1332,6 +1394,7 @@ function updateFileStatus(fileName, count, note) {
 }
 
 function initEvents() {
+  initTabs();
   const dropZone = $("#dropZone");
   const fileInput = $("#csvFile");
 
@@ -1358,6 +1421,7 @@ function initEvents() {
     state.columns = []; state.rows = [];
     state.rowNumbers = []; state.skippedRows = []; state.partialNameRows = [];
     state.mapping = {};
+    state.fileName = "";
     state.sort = "none";
     if (sortSelect) sortSelect.value = "none";
     $("#fileStatus").hidden = true;
