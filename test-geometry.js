@@ -539,7 +539,17 @@ check(mCell.includes("Character: Chang"), "character line renders");
   check(mCell.indexOf('class="mk-vocab"') < mCell.indexOf('class="mk-circle"'), "vocab box sits between the WILF checklist and the circle");
 check(mCell.includes(">WILF<"), "WILF header renders");
 check((mCell.match(/class="mk-box"/g) || []).length === 3, "three WILF criteria checkboxes render (4th is blank/skipped)");
-check(mCell.includes("Capital Letters") && mCell.includes("word with prefix un"), "typed criteria text renders");
+  check(mCell.includes("Capital Letters") && mCell.includes("word with prefix un"), "typed criteria text renders");
+  const vfs = (cell) => parseFloat((cell.match(/--mk-vocab-fs:([\d.]+)mm/) || [])[1]);
+  state.banner.vocab = "one\ntwo\nthree\nfour";
+  const vFour = vfs(__app.buildMarkingCell(mT, 0));
+  state.banner.vocab = "one\ntwo\nthree\nfour\nfive\nsix";
+  const vSix = vfs(__app.buildMarkingCell(mT, 0));
+  check(vSix < vFour, `5+ word-bank lines step the font down (${vSix}mm < ${vFour}mm)`);
+  state.banner.vocab = "a\nb\nc\nd\ne\nf\ng\nh";
+  const vEight = vfs(__app.buildMarkingCell(mT, 0));
+  check(vEight < vSix, `7+ word-bank lines step down again (${vEight}mm < ${vSix}mm)`);
+  state.banner.vocab = "avaricious, capsized\nobey, enchanted";
 check(mCell.includes('class="mk-circle"'), "grading circle renders as its own outline element");
 check(/left:[\d.]+mm;top:[\d.]+mm;/.test(mCell), "marking cell keeps label geometry (mm origin + size)");
 const markSheets = __app.buildSheets(true);
@@ -597,6 +607,25 @@ console.log("Simple WALT & WILF template:");
   const four = __app.buildSimpleCell(sT, 0);
   check((four.match(/class="mk-box"/g) || []).length === 4, "4th WILF criterion renders when supplied");
   state.simple.wilf = ["I can label the eyes", "I can use shading", "I can add a background", ""];
+
+  const wfs = (cell) => parseFloat((cell.match(/--sm-walt-fs:([\d.]+)mm/) || [])[1]);
+  state.simple.walt = "Short WALT";
+  const wShort = wfs(__app.buildSimpleCell(sT, 0));
+  state.simple.walt = "A much longer WALT statement that keeps going and going so the text has to step down a size to stay readable across three lines in the band";
+  const wLong = wfs(__app.buildSimpleCell(sT, 0));
+  check(wLong < wShort, `long WALT text steps the font down (${wLong}mm < ${wShort}mm)`);
+  check(sCell.includes("sm-walt-t"), "WALT text uses the clamped three-line element");
+  state.simple.walt = "To identify features of a portrait";
+
+  const shortT = { cols: 2, rows: 8, originX: 0, pitchX: 0, originY: 0, pitchY: 0, labelW: 99.1, labelH: 20, radius: 2 };
+  check(__app.buildSimpleCell(shortT, 0).includes("--sm-circle:9.00mm"), "circle never shrinks below 9mm on very short labels");
+  check(__app.buildSimpleCell(sT, 0).includes("--sm-circle:11.00mm"), "circle stays 11mm on standard labels");
+
+  state.logoDataUrl = "data:image/png;base64,AAAA";
+  state.opts.logoSize = "xl";
+  check(__app.buildSimpleCell(sT, 0).includes("--logo-mult:2.4"), "simple label honours the Logo size option (xl → 2.4)");
+  state.opts.logoSize = "std";
+  state.logoDataUrl = null;
 
   const sSheets = __app.buildSheets(true);
   check(sSheets.length === 1, "empty data still prints exactly one simple sheet");

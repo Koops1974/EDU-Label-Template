@@ -784,6 +784,15 @@ function markingContentHtml() {
   );
 }
 
+/* The word bank steps down a size as it holds more lines so a longer
+ * list still fits inside the box instead of being clipped. */
+function vocabFontSize(text) {
+  const lines = String(text || "").split("\n").filter((l) => l.trim() !== "").length;
+  if (lines > 6) return 1.6;
+  if (lines > 4) return 1.9;
+  return 2.2;
+}
+
 function buildMarkingCell(t, cellIndex) {
   const col = cellIndex % t.cols, rowIdx = Math.floor(cellIndex / t.cols);
   const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowIdx * t.pitchY);
@@ -792,7 +801,7 @@ function buildMarkingCell(t, cellIndex) {
   const cssVars =
     `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
     `--mk-title-fs:${(3.4 * fs).toFixed(2)}mm;--mk-char-fs:${(2.1 * fs).toFixed(2)}mm;` +
-    `--mk-vocab-fs:${(2.2 * fs).toFixed(2)}mm;--mk-wilf-fs:${(2.5 * fs).toFixed(2)}mm;` +
+    `--mk-vocab-fs:${(vocabFontSize(state.banner.vocab) * fs).toFixed(2)}mm;--mk-wilf-fs:${(2.5 * fs).toFixed(2)}mm;` +
     `--mk-crit-fs:${(1.8 * fs).toFixed(2)}mm;` +
     `--mk-logo:${Math.min(9, t.labelH * 0.34).toFixed(2)}mm;` +
     `--mk-circle:${Math.min(8, t.labelH * 0.4).toFixed(2)}mm;` +
@@ -826,6 +835,15 @@ function simpleContentHtml() {
   );
 }
 
+/* WALT text steps down a size as it gets longer so it stays readable
+ * across up to three lines instead of being clamped away. */
+function waltFontSize(text) {
+  const len = String(text || "").trim().length;
+  if (len > 110) return 1.8;
+  if (len > 70) return 2.0;
+  return 2.3;
+}
+
 function buildSimpleCell(t, cellIndex) {
   const col = cellIndex % t.cols, rowIdx = Math.floor(cellIndex / t.cols);
   const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowIdx * t.pitchY);
@@ -833,10 +851,10 @@ function buildSimpleCell(t, cellIndex) {
   const guidesCls = state.opts.showGuides ? " guides" : "";
   const cssVars =
     `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
-    `--sm-walt-fs:${(2.3 * fs).toFixed(2)}mm;--sm-wilf-fs:${(2.2 * fs).toFixed(2)}mm;` +
+    `--sm-walt-fs:${(waltFontSize(state.simple.walt) * fs).toFixed(2)}mm;--sm-wilf-fs:${(2.2 * fs).toFixed(2)}mm;` +
     `--mk-crit-fs:${(1.9 * fs).toFixed(2)}mm;` +
-    `--sm-circle:${Math.min(11, t.labelH * 0.42).toFixed(2)}mm;` +
-    `--r:${t.radius}mm;`;
+    `--sm-circle:${Math.min(11, Math.max(9, t.labelH * 0.42)).toFixed(2)}mm;` +
+    `--logo-mult:${LOGO_MULT[state.opts.logoSize] || 1};--r:${t.radius}mm;`;
   return (
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +

@@ -783,7 +783,7 @@ a.btn-soft { text-decoration: none; text-align: center; }
   width: calc(var(--lw, 99mm) * 0.24); flex: none; min-width: 14mm;
   border: 0.3mm solid #111; border-radius: 0.8mm;
   font-size: var(--mk-vocab-fs, 2.2mm); font-weight: 700; line-height: 1.35;
-  padding: 1mm 1.2mm; overflow: hidden;
+  padding: 1mm 1.2mm; overflow: hidden; overflow-wrap: break-word;
   display: flex; flex-direction: column; justify-content: center;
 }
 .mk-wilf {
@@ -821,11 +821,11 @@ a.btn-soft { text-decoration: none; text-align: center; }
   font-weight: 800; font-size: var(--sm-walt-fs, 2.3mm); letter-spacing: .04em;
   flex: none; border-right: 0.25mm solid #111; padding-right: 1.2mm;
 }
-.sm-logo { height: 7mm; max-width: 22mm; object-fit: contain; flex: none; }
+.sm-logo { height: min(10mm, calc(5.5mm * var(--logo-mult, 1))); max-width: 22mm; object-fit: contain; flex: none; }
 .sm-walt-t {
   font-weight: 700; font-size: var(--sm-walt-fs, 2.3mm); line-height: 1.15;
   overflow: hidden; min-width: 0;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
 }
 .sm-low { display: flex; flex: 1; gap: 1.4mm; min-height: 0; min-width: 0; align-items: stretch; }
 .sm-wilf {
