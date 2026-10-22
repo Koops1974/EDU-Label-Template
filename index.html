@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=21">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -179,7 +179,7 @@
         <h3 class="step-title">Map your columns</h3>
       </div>
       <details class="adv-details" id="mapDetails">
-        <summary>Column mapping &amp; options</summary>
+        <summary><span class="map-status" id="mapStatus">Columns mapped automatically</span><span class="map-cue" id="mapCue">Adjust…</span></summary>
         <p class="hint-text">Fields are numbered top to bottom. Each dropdown lists your uploaded CSV columns (labelled A, B, C… as in a spreadsheet). Any field can be hidden.</p>
 
         <div class="field-map" id="mappingRowFirst"></div>
@@ -460,6 +460,13 @@
           <option value="all">Whole label text</option>
         </select>
       </div>
+
+      <div class="colour-row">
+        <label for="labelBarColor">School strip colour</label>
+        <input type="color" id="labelBarColor" value="#1d4ed8" aria-label="School strip colour">
+        <button type="button" class="btn-ghost btn-sm" id="labelBarReset">Reset to default</button>
+        <span class="hint-inline">Colour of the school-name bar on each printed label</span>
+      </div>
     </details>
     </div><!-- /stepPanel3 -->
 
@@ -471,13 +478,6 @@
       <label class="check"><input type="checkbox" id="optGuides" checked><span>Show dashed alignment guides</span></label>
       <label class="check"><input type="checkbox" id="optColor" checked><span>Print in colour (accent bars)</span></label>
       <label class="check"><input type="checkbox" id="optSkipBlanks" checked><span>Skip empty pupil names</span></label>
-
-      <div class="colour-row">
-        <label for="labelBarColor">School strip colour</label>
-        <input type="color" id="labelBarColor" value="#1d4ed8" aria-label="School strip colour">
-        <button type="button" class="btn-ghost btn-sm" id="labelBarReset">Reset to default</button>
-        <span class="hint-inline">Colour of the school-name bar on each printed label</span>
-      </div>
 
       <p class="hint-text">Turn the guides off for the final run. Print at <strong>100% / Actual size</strong>, margins <strong>None</strong>, background graphics <strong>On</strong>.</p>
 
@@ -597,7 +597,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=24"></script>
+<script src="app.js?v=25"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText };"
   );
 eval(appSrc);
 
@@ -257,6 +257,20 @@ console.log("Step tabs (summary chips):");
   check(__app.chipsText().data === "No list yet", "data chip reports no list when the rows are empty");
   state.template = saved.t; state.layout = saved.l;
   state.opts.font = saved.f; state.rows = saved.rows;
+}
+
+console.log("Mapping status (Adjust… expander):");
+{
+  const st = __app.mapStatusText();
+  check(st.charAt(0) === "✓" && st.includes("Name") && st.includes("Class") &&
+        st.includes("Subject") && st.includes("Year"),
+        `status lists the auto-mapped columns ("${st}")`);
+  check(!st.includes("School"), "default fixed school name is not listed as a column");
+  const savedName = state.mapping.pupilName, savedFirst = state.mapping.firstName;
+  state.mapping.pupilName = null; state.mapping.firstName = null;
+  check(__app.mapStatusText().charAt(0) === "⚠",
+        "status warns when no name column is mapped");
+  state.mapping.pupilName = savedName; state.mapping.firstName = savedFirst;
 }
 
 console.log("Calibration test sheet:");

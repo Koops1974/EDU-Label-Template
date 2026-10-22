@@ -295,6 +295,9 @@ a.btn-soft { text-decoration: none; text-align: center; }
 }
 .adv-details summary { cursor: pointer; font-size: 13px; color: var(--primary-dark); font-weight: 700; transition: color 150ms ease; }
 .adv-details summary:hover { color: var(--blue); }
+.map-status { color: var(--body); font-weight: 600; }
+.map-status.warn { color: #b91c1c; }
+.map-cue { margin-left: 9px; color: var(--primary); }
 .check { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 9px 0; cursor: pointer; color: var(--body); }
 .check input { accent-color: var(--primary); width: 16px; height: 16px; }
 .colour-row { display: flex; align-items: center; gap: 10px; margin: 10px 0 6px; }

@@ -98,8 +98,8 @@ const CAL = () => {
 const calLeft = (v) => v + CAL().x;
 const calTop = (v) => v + CAL().y;
 
-/* School-name strip colour — surfaced as a picker in the printing options.
- * Layered over config.js primaryColor and remembered for this browser. */
+/* School-name strip colour — surfaced with the other colour options on
+ * the Design tab. Layered over config.js primaryColor and remembered for this browser. */
 const COLOR_KEY = "labelMakerBarColor";
 const readStoredColor = () => {
   try {
@@ -1125,6 +1125,7 @@ function renderAll() {
                 ? "Full-bleed sheet (no margin at the edges) — print at 100% / Actual size with margins set to 'none'. Test one sheet before a full run."
                 : "Choose 'Save as PDF' in the print dialog for a printable file.")));
   setStepChips();
+  setMapStatus();
 }
 
 /* =====================================================================
@@ -1161,6 +1162,31 @@ function setStepChips() {
   $("#chipSheet").textContent = c.sheet;
   $("#chipDesign").textContent = c.design;
   $("#chipPrint").textContent = c.print;
+}
+
+/* Status line inside the mapping "Adjust…" summary: shows at a glance
+ * which label fields found a column (pure — tested headlessly). */
+function mapStatusText() {
+  const m = state.mapping;
+  const col = (k) => m[k] && m[k].kind === "col";
+  const named = (m.pupilName && m.pupilName.kind !== "hide") ||
+                (m.firstName && m.firstName.kind !== "hide");
+  if (!named) return "⚠ No name column detected";
+  const parts = ["Name"];
+  if (col("className")) parts.push("Class");
+  if (col("subject")) parts.push("Subject");
+  if (col("yearGroup")) parts.push("Year");
+  if (col("school")) parts.push("School");
+  if (col("colour")) parts.push("Colour");
+  return "✓ " + parts.join(" · ");
+}
+
+function setMapStatus() {
+  const el = $("#mapStatus");
+  if (!el) return;
+  const t = mapStatusText();
+  el.textContent = t;
+  el.classList.toggle("warn", t.charAt(0) === "⚠");
 }
 
 /* =====================================================================
@@ -1395,6 +1421,14 @@ function updateFileStatus(fileName, count, note) {
 
 function initEvents() {
   initTabs();
+  /* Keep the mapping summary cue ("Adjust…" / "Close") in step with the
+   * disclosure however it is opened — summary click or programmatic. */
+  const mapDetails = $("#mapDetails"), mapCue = $("#mapCue");
+  if (mapDetails && mapCue) {
+    mapDetails.addEventListener("toggle", () => {
+      mapCue.textContent = mapDetails.open ? "Close" : "Adjust…";
+    });
+  }
   const dropZone = $("#dropZone");
   const fileInput = $("#csvFile");
 
