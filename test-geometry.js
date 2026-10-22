@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, buildSimpleCell, simpleContentHtml, markingContentHtml, effectiveLogoSrc, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText, trayState, trayPlan, traySheetsHtml, trayLabelHtml, trayAddLabel, trayDuplicateLabel, trayRemoveLabel, trayMoveLabel, trayAddStarters, trayClearLabels, trayActiveLabel, trayMetaText };"
   );
 eval(appSrc);
 
@@ -534,7 +534,9 @@ const mCell = __app.buildMarkingCell(mT, 0);
 check(mCell.includes('class="label-inner marking"'), "marking cell uses the marking interior");
 check(mCell.includes("Drawing Club: The Magic Paintbrush"), "title renders from state.banner");
 check(mCell.includes("Character: Chang"), "character line renders");
-check(mCell.includes("avaricious") && mCell.includes("obey"), "vocabulary block renders");
+  check(mCell.includes("avaricious") && mCell.includes("obey"), "vocabulary block renders");
+  check(mCell.indexOf('class="mk-wilf"') < mCell.indexOf('class="mk-vocab"'), "WILF checklist sits to the LEFT of the wider vocab box (left-to-right order)");
+  check(mCell.indexOf('class="mk-vocab"') < mCell.indexOf('class="mk-circle"'), "vocab box sits between the WILF checklist and the circle");
 check(mCell.includes(">WILF<"), "WILF header renders");
 check((mCell.match(/class="mk-box"/g) || []).length === 3, "three WILF criteria checkboxes render (4th is blank/skipped)");
 check(mCell.includes("Capital Letters") && mCell.includes("word with prefix un"), "typed criteria text renders");
@@ -570,6 +572,171 @@ state.banner.wilf = ["", "", "", ""];
 state.layout = "classic";
 state.template = "L7160";
 state.rows = sample;
+
+console.log("Simple WALT & WILF template:");
+{
+  const sT = global.AVERY_TEMPLATES["L7162"];
+  state.layout = "simple";
+  state.template = "L7162";
+  state.opts.font = "";
+  state.rows = [];
+  state.simple.walt = "To identify features of a portrait";
+  state.simple.wilf = ["I can label the eyes", "I can use shading", "I can add a background", ""];
+
+  const sCell = __app.buildSimpleCell(sT, 0);
+  check(sCell.includes('label-inner simple'), "simple cell builds");
+  check(sCell.includes("To identify features of a portrait"), "WALT text renders");
+  check(sCell.includes(">WALT<") && sCell.includes(">WILF<"), "WALT and WILF headers render");
+  check((sCell.match(/class="mk-box"/g) || []).length === 3, "three WILF tick boxes render (4th blank criterion skipped)");
+  check(sCell.includes('class="sm-circle"'), "traffic-light colouring circle renders");
+  check(sCell.includes('class="sm-walt"') && sCell.includes('class="sm-wilf"'), "WALT band and WILF checklist sections present");
+  const s2 = __app.buildSimpleCell(sT, 15);
+  check(sCell.replace(/left:[\d.]+mm;top:[\d.]+mm;/g, "") === s2.replace(/left:[\d.]+mm;top:[\d.]+mm;/g, ""), "every simple label is identical (static, no row data)");
+
+  state.simple.wilf = ["a", "b", "c", "d"];
+  const four = __app.buildSimpleCell(sT, 0);
+  check((four.match(/class="mk-box"/g) || []).length === 4, "4th WILF criterion renders when supplied");
+  state.simple.wilf = ["I can label the eyes", "I can use shading", "I can add a background", ""];
+
+  const sSheets = __app.buildSheets(true);
+  check(sSheets.length === 1, "empty data still prints exactly one simple sheet");
+  check((sSheets[0].match(/label-inner simple/g) || []).length === 16, "L7162 simple sheet builds all 16 cells");
+
+  const s60 = __app.buildSimpleCell(global.AVERY_TEMPLATES["L7160"], 0);
+  check(s60.includes('label-inner simple') && s60.includes("To identify features of a portrait"), "simple WALT & WILF label builds on the 63.5x38.1mm L7160 sheet too");
+
+  check(__app.chipsText().design === "WALT & WILF · Default", `design chip reads WALT & WILF ("${__app.chipsText().design}")`);
+  check(typeof state.simple.walt === "string" && Array.isArray(state.simple.wilf), "simple state shape is walt + wilf[4]");
+
+  const payload = __app.exportSetup();
+  check(payload.simple && payload.simple.walt === "To identify features of a portrait" && payload.simple.wilf[1] === "I can use shading", "export carries WALT & WILF content");
+
+  state.simple.walt = ""; state.simple.wilf = ["", "", "", ""];
+  const err = __app.applySetup({ app: "edu-label-maker", simple: { walt: "WALT text", wilf: ["a", "b", "", ""] } });
+  check(err === "" && state.simple.walt === "WALT text" && state.simple.wilf[1] === "b", "import restores WALT & WILF content");
+  state.simple.walt = ""; state.simple.wilf = ["", "", "", ""];
+  state.layout = "classic";
+  state.template = "L7160";
+  state.rows = sample;
+}
+
+console.log("Logo upload on every layout:");
+{
+  const PNG = "data:image/png;base64,AAAA";
+  check(__app.effectiveLogoSrc() === null, "no logo set → effectiveLogoSrc is null");
+  state.logoDataUrl = PNG;
+  check(__app.effectiveLogoSrc() === PNG, "uploaded logo is returned by effectiveLogoSrc");
+
+  // Marking: the general "Add a logo…" upload must now show on the banner
+  state.layout = "marking";
+  state.template = "L7162";
+  state.rows = [];
+  state.banner.title = ""; state.banner.character = "";
+  state.banner.vocab = ""; state.banner.wilf = ["", "", "", ""];
+  state.banner.clubLogo = null;
+  const mLogo = __app.buildMarkingCell(global.AVERY_TEMPLATES["L7162"], 0);
+  check(mLogo.includes('class="mk-club-img"') && mLogo.includes(PNG), "uploaded logo renders on the marking banner");
+  state.banner.clubLogo = "data:image/png;base64,CLUB";
+  const mClub = __app.buildMarkingCell(global.AVERY_TEMPLATES["L7162"], 0);
+  check(mClub.includes("CLUB") && !mClub.includes(PNG), "a club-specific logo still overrides the general upload on marking");
+  state.banner.clubLogo = null;
+
+  // Simple: the upload must show in the WALT band
+  state.layout = "simple";
+  state.simple.walt = "WALT text"; state.simple.wilf = ["a", "b", "", ""];
+  const sLogo = __app.buildSimpleCell(global.AVERY_TEMPLATES["L7162"], 0);
+  check(sLogo.includes('class="sm-logo"') && sLogo.includes(PNG), "uploaded logo renders in the WALT band of the simple label");
+  state.logoDataUrl = null;
+  const sNo = __app.buildSimpleCell(global.AVERY_TEMPLATES["L7162"], 0);
+  check(!sNo.includes("sm-logo"), "no logo → simple label omits the logo slot");
+  const mNo = __app.buildMarkingCell(global.AVERY_TEMPLATES["L7162"], 0);
+  check(!mNo.includes("mk-club-img") && mNo.includes("mk-club-mark"), "no logo → marking falls back to the monogram mark");
+
+  // Classic: unchanged behaviour via effectiveLogoSrc
+  state.layout = "classic";
+  state.template = "L7160";
+  state.rows = sample;
+  state.logoDataUrl = PNG;
+  const classic = __app.buildSheets(false)[0];
+  check(classic.includes(PNG), "uploaded logo still renders on the classic pupil labels");
+  state.logoDataUrl = null;
+  state.rows = sample;
+}
+
+console.log("Tray labels (free A4 layout):");
+{
+  __app.trayClearLabels();
+  const ts = __app.trayState;
+  ts.size = "medium"; ts.gap = 3; ts.cut = "dashed"; ts.defaultTpl = "pastel";
+
+  // Geometry: how many of each size fit on A4 (margin 8mm, gap 3mm)
+  const fake = (n) => Array.from({ length: n }, () => ({}));
+  const med = __app.trayPlan(fake(50), "medium", 3, 8);
+  check(med.cols === 2 && med.rows === 6 && med.per === 12, `medium 90x40: 2x6=12/page (got ${med.cols}x${med.rows}=${med.per})`);
+  const sml = __app.trayPlan(fake(50), "small", 3, 8);
+  check(sml.cols === 3 && sml.rows === 8 && sml.per === 24, `small 60x30: 3x8=24/page (got ${sml.cols}x${sml.rows}=${sml.per})`);
+  const lar = __app.trayPlan(fake(50), "large", 3, 8);
+  check(lar.cols === 1 && lar.rows === 5 && lar.per === 5, `large 100x50: 1x5=5/page (got ${lar.cols}x${lar.rows}=${lar.per})`);
+
+  // Pagination: 13 medium labels -> 2 pages (12 + 1), mm positions exact
+  for (let i = 0; i < 13; i++) __app.trayAddLabel("Label " + (i + 1));
+  const plan = __app.trayPlan(ts.labels, "medium", 3, 8);
+  check(plan.pages.length === 2 && plan.pages[0].length === 12 && plan.pages[1].length === 1,
+    `13 labels paginate 12 + 1 (got ${plan.pages.map((p) => p.length).join(" + ")})`);
+  const c0 = plan.pages[0][0], c1 = plan.pages[0][1], c2 = plan.pages[0][2];
+  check(c0.x === 8 && c0.y === 8, `first label at margin 8,8 (got ${c0.x},${c0.y})`);
+  check(c1.x === 101 && c1.y === 8, `second label at 101,8 (90mm + 3mm gap)`);
+  check(c2.y === 51, `third label starts row 2 at y=51 (40mm + 3mm gap)`);
+
+  // Sheet HTML: real mm sizes, cut lines, print-sheet class for printing
+  const sheets = __app.traySheetsHtml(false);
+  check((sheets.match(/class="sheet tray-page"/g) || []).length === 2, "preview builds 2 tray pages");
+  check(sheets.includes("width:90.00mm;height:40.00mm;"), "labels carry exact 90x40mm size");
+  check(sheets.includes('class="tray-cell cut-dashed"'), "dashed cut lines applied");
+  const printSheets = __app.traySheetsHtml(true);
+  check(printSheets.includes("print-sheet") && printSheets.includes("tray-page"), "print pages keep .print-sheet for the print pipeline");
+
+  // Meta summary
+  check(__app.trayMetaText() === "13 labels · 2 pages · 90 × 40 mm", `meta summary ("${__app.trayMetaText()}")`);
+
+  // Long text shrinks; short text stays large; escaping works
+  const shortHtml = __app.trayLabelHtml({ id: 900, text: "Art", tpl: "pastel", scale: 1, align: "center", decor: "none" });
+  const longHtml = __app.trayLabelHtml({ id: 901, text: "International Reading Corner", tpl: "pastel", scale: 1, align: "center", decor: "none" });
+  const fs = (h) => parseFloat(/font-size:([\d.]+)mm/.exec(h)[1]);
+  check(fs(longHtml) < fs(shortHtml), `long text renders smaller than short (${fs(longHtml)}mm < ${fs(shortHtml)}mm)`);
+  check(fs(longHtml) >= 2.2, "shrunk title never below 2.2mm");
+  const evil = __app.trayLabelHtml({ id: 902, text: 'Maths <b>&"x"', tpl: "bold", scale: 1, align: "left", decor: "bar" });
+  check(evil.includes("&lt;b&gt;") && !evil.includes("<b>") && evil.includes("tray-decor-bar"),
+    "label text is escaped and decoration renders");
+  const aL = __app.trayLabelHtml({ id: 910, text: "Left", tpl: "pastel", scale: 1, align: "left", decor: "none" });
+  const aR = __app.trayLabelHtml({ id: 911, text: "Right", tpl: "pastel", scale: 1, align: "right", decor: "none" });
+  const aC = __app.trayLabelHtml({ id: 912, text: "Centre", tpl: "pastel", scale: 1, align: "center", decor: "none" });
+  check(aL.includes("text-align:left") && aR.includes("text-align:right") && aC.includes("text-align:center"),
+    "align left/right/centre each render on its label");
+
+  // List operations
+  const first = ts.labels[0], second = ts.labels[1];
+  check(__app.trayDuplicateLabel(first.id) && ts.labels.length === 14, "duplicate inserts a copy (14 labels)");
+  check(ts.labels[1].text === first.text && ts.labels[1].id !== first.id, "copy keeps text, gets a new id");
+  check(__app.trayMoveLabel(second.id, "down") && ts.labels[3].id === second.id && ts.labels[2].id !== second.id, "move down reorders");
+  check(!__app.trayMoveLabel(ts.labels[0].id, "up"), "move up at the top is a no-op");
+  check(__app.trayRemoveLabel(ts.labels[13].id) && ts.labels.length === 13, "remove drops one label");
+  check(__app.trayAddStarters() === 10 && ts.labels.length === 23, "starter list appends the 10 common labels");
+  check(__app.trayAddStarters() === 0, "starters already present are not re-added");
+
+  __app.trayClearLabels();
+  check(ts.labels.length === 0 && ts.activeId === null, "clear empties the list");
+  check(__app.trayMetaText() === "No labels yet.", "meta reports the empty list");
+  check(__app.trayAddStarters() === 10 && ts.labels.length === 10, "starter list adds 10 common classroom labels");
+  check(__app.trayActiveLabel() === null, "starter labels do not auto-select");
+  const made = __app.trayAddLabel("Pupils");
+  check(__app.trayActiveLabel() === made, "add selects the new label for editing");
+  check(state.rows.length === sample.length, "tray operations never touch the pupil rows");
+
+  // Leave tray state clean for any future checks
+  __app.trayClearLabels();
+  ts.size = "medium"; ts.gap = 3; ts.cut = "dashed"; ts.defaultTpl = "pastel";
+}
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
 process.exit(failures ? 1 : 0);

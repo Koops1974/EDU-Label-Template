@@ -14,6 +14,7 @@ Everything runs **in your browser**. Upload a CSV, choose your label sheet, clic
 - **Preview on screen**, then **Print / Save as PDF** straight from the browser
 - **Customisable schooling branding** via a single config file (logo, colours, school name)
 - **Three label layouts**: Classic, Badge, Minimal
+- **Tray Labels mode** (header switch) — free-placement classroom tray/pupil labels in 60×30, 90×40 or 100×50 mm, with four original designs, dashed cut guides and the same one-click print pipeline
 - **Fully offline** — all libraries vendored, no CDN, no tracking, no analytics
 
 ---

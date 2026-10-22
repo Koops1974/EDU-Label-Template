@@ -136,6 +136,11 @@ const state = {
     clubLogo: null,   // dataURL
     storyImage: null, // dataURL
   },
+  /* Simple WALT & WILF label (static, editable at print time) */
+  simple: {
+    walt: "",
+    wilf: ["", "", "", ""],
+  },
   opts: {
     showGuides: true,
     color: true,
@@ -196,7 +201,7 @@ function resolveColour(raw) {
 
 const LOGO_MULT = { std: 1, lg: 1.7, xl: 2.4 };
 const FONT_KEYS = ["comic", "georgia", "verdana", "trebuchet"];
-const LAYOUT_KEYS = ["classic", "badge", "minimal", "stack", "marking"];
+const LAYOUT_KEYS = ["classic", "badge", "minimal", "stack", "marking", "simple"];
 
 function setupBranding() {
   const C = SCHOOL_CONFIG;
@@ -754,7 +759,7 @@ function buildLabelCell(row, t, cellIndex) {
  * ===================================================================== */
 function markingContentHtml() {
   const b = state.banner;
-  const logoUrl = b.clubLogo || (SCHOOL_CONFIG.logo ? SCHOOL_CONFIG.logo : "");
+  const logoUrl = b.clubLogo || effectiveLogoSrc() || "";
   const club = logoUrl
     ? `<img class="mk-club-img" src="${esc(logoUrl)}" alt="">`
     : `<span class="mk-club-mark">${esc((SCHOOL_CONFIG.logoText || SCHOOL_CONFIG.shortName || "CLUB").slice(0, 2).toUpperCase())}</span>`;
@@ -774,8 +779,8 @@ function markingContentHtml() {
   return (
     `<div class="mk-left">` +
       `<div class="mk-head">${club}<div class="mk-titles">${title}${char}</div></div>` +
-      `<div class="mk-low">${story}<div class="mk-vocab">${vocab}</div></div>` +
-    `</div>${wilf}${circle}`
+      `<div class="mk-low">${story}${wilf}</div>` +
+    `</div><div class="mk-vocab">${vocab}</div>${circle}`
   );
 }
 
@@ -787,7 +792,7 @@ function buildMarkingCell(t, cellIndex) {
   const cssVars =
     `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
     `--mk-title-fs:${(3.4 * fs).toFixed(2)}mm;--mk-char-fs:${(2.1 * fs).toFixed(2)}mm;` +
-    `--mk-vocab-fs:${(1.9 * fs).toFixed(2)}mm;--mk-wilf-fs:${(2.5 * fs).toFixed(2)}mm;` +
+    `--mk-vocab-fs:${(2.2 * fs).toFixed(2)}mm;--mk-wilf-fs:${(2.5 * fs).toFixed(2)}mm;` +
     `--mk-crit-fs:${(1.8 * fs).toFixed(2)}mm;` +
     `--mk-logo:${Math.min(9, t.labelH * 0.34).toFixed(2)}mm;` +
     `--mk-circle:${Math.min(8, t.labelH * 0.4).toFixed(2)}mm;` +
@@ -796,6 +801,46 @@ function buildMarkingCell(t, cellIndex) {
     `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
     `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
       `<div class="label-inner marking${state.opts.font ? " f-" + state.opts.font : ""}" style="color:#111;">${markingContentHtml()}</div>` +
+    `</div>`
+  );
+}
+
+/* =====================================================================
+ *  Simple WALT & WILF label
+ *  A static banner: WALT band on top, WILF tick checklist underneath
+ *  and a circle the children colour in as a traffic-light self-check.
+ * ===================================================================== */
+function simpleContentHtml() {
+  const s = state.simple;
+  const logoUrl = effectiveLogoSrc();
+  const logo = logoUrl ? `<img class="sm-logo" src="${esc(logoUrl)}" alt="">` : "";
+  const walt = s.walt ? `<span class="sm-walt-t">${esc(s.walt)}</span>` : "";
+  const crit = (Array.isArray(s.wilf) ? s.wilf : []).filter((x) => String(x).trim() !== "");
+  const wilf =
+    `<div class="sm-wilf"><div class="sm-wilf-h">WILF</div>` +
+    crit.map((x) => `<div class="mk-crit"><span class="mk-box"></span><span class="mk-crit-t">${esc(x)}</span></div>`).join("") +
+    `</div>`;
+  return (
+    `<div class="sm-walt">${logo}<span class="sm-h">WALT</span>${walt}</div>` +
+    `<div class="sm-low">${wilf}<div class="sm-circle"></div></div>`
+  );
+}
+
+function buildSimpleCell(t, cellIndex) {
+  const col = cellIndex % t.cols, rowIdx = Math.floor(cellIndex / t.cols);
+  const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowIdx * t.pitchY);
+  const fs = fontScale(t.labelH);
+  const guidesCls = state.opts.showGuides ? " guides" : "";
+  const cssVars =
+    `--lh:${t.labelH.toFixed(2)}mm;--lw:${t.labelW.toFixed(2)}mm;` +
+    `--sm-walt-fs:${(2.3 * fs).toFixed(2)}mm;--sm-wilf-fs:${(2.2 * fs).toFixed(2)}mm;` +
+    `--mk-crit-fs:${(1.9 * fs).toFixed(2)}mm;` +
+    `--sm-circle:${Math.min(11, t.labelH * 0.42).toFixed(2)}mm;` +
+    `--r:${t.radius}mm;`;
+  return (
+    `<div class="label-cell${guidesCls}" style="left:${left.toFixed(2)}mm;top:${top.toFixed(2)}mm;` +
+    `width:${t.labelW.toFixed(2)}mm;height:${t.labelH.toFixed(2)}mm;${cssVars}">` +
+      `<div class="label-inner simple${state.opts.font ? " f-" + state.opts.font : ""}" style="color:#111;">${simpleContentHtml()}</div>` +
     `</div>`
   );
 }
@@ -917,6 +962,7 @@ function emptySheetHtml() {
   for (let i = 0; i < t.cols * t.rows; i++) {
     if (state.graph) { cells += buildGraphicCell(null, t, i); continue; }
     if (state.layout === "marking") { cells += buildMarkingCell(t, i); continue; }
+    if (state.layout === "simple") { cells += buildSimpleCell(t, i); continue; }
     const col = i % t.cols, rowI = Math.floor(i / t.cols);
     const left = calLeft(t.originX + col * t.pitchX), top = calTop(t.originY + rowI * t.pitchY);
     const guides = state.opts.showGuides ? " guides" : "";
@@ -932,13 +978,14 @@ function buildSheets(printMode) {
 
   /* Static banner labels: the design is identical on every cell, so a
    * full sheet is always produced (rows only decide how many sheets). */
-  if (state.layout === "marking") {
+  if (state.layout === "marking" || state.layout === "simple") {
+    const buildBanner = state.layout === "simple" ? buildSimpleCell : buildMarkingCell;
     const perSheet = t.cols * t.rows;
     const totalSheets = Math.max(1, Math.ceil((state.rows.length || 1) / perSheet));
     const sheetsHtml = [];
     for (let s = 0; s < totalSheets; s++) {
       let cells = "";
-      for (let i = 0; i < perSheet; i++) cells += buildMarkingCell(t, i);
+      for (let i = 0; i < perSheet; i++) cells += buildBanner(t, i);
       const cls = printMode ? "sheet print-sheet" : "sheet";
       sheetsHtml.push(`<div class="${cls}"><div class="sheet-pad">${cells}</div></div>`);
     }
@@ -980,12 +1027,14 @@ function renderPreview() {
   const meta = $("#previewMeta");
   const t = AVERY_TEMPLATES[state.template];
   const n = planFills().fills.length;
-  const isMarking = state.layout === "marking";
-  const sheets = (n || isMarking) ? buildSheets(false) : [emptySheetHtml()];
+  const isBanner = state.layout === "marking" || state.layout === "simple";
+  const sheets = (n || isBanner) ? buildSheets(false) : [emptySheetHtml()];
   container.innerHTML = sheets.join("");
-  if (isMarking) {
+  if (isBanner) {
     const needed = Math.max(1, Math.ceil((state.rows.length || 1) / (t.cols * t.rows)));
-    meta.textContent = `Marking label (${t.code}) · ${needed} sheet${needed === 1 ? "" : "s"} · identical banner on every label`;
+    meta.textContent = state.layout === "simple"
+      ? `WALT & WILF label (${t.code}) · ${needed} sheet${needed === 1 ? "" : "s"} · identical label on every sticker`
+      : `Marking label (${t.code}) · ${needed} sheet${needed === 1 ? "" : "s"} · identical banner on every label`;
   } else if (n) {
     const sheetsNeeded = Math.ceil(n / (t.cols * t.rows));
     const gfxTag = state.graph ? " · graphic design " + (activeGraphic() ? activeGraphic().name : "") : "";
@@ -997,9 +1046,19 @@ function renderPreview() {
 
 function renderPrintRoot() {
   const root = $("#printRoot");
+  /* Tray mode keeps #printRoot stocked with tray pages so Ctrl+P works. */
+  let inTray = false;
+  try {
+    inTray = !!(document.body && document.body.classList &&
+      document.body.classList.contains("tray-mode"));
+  } catch (e) { inTray = false; }
+  if (inTray) {
+    root.innerHTML = trayState.labels.length ? traySheetsHtml(true) : "";
+    return;
+  }
   const n = planFills().fills.length;
-  const isMarking = state.layout === "marking";
-  root.innerHTML = (n || isMarking) ? buildSheets(true).join("") : "";
+  const isBanner = state.layout === "marking" || state.layout === "simple";
+  root.innerHTML = (n || isBanner) ? buildSheets(true).join("") : "";
   const sheets = $$(".print-sheet", root);
   // ensure proper page-break grouping
   sheets.forEach((sh) => sh.style.pageBreakBefore = "");
@@ -1109,16 +1168,18 @@ function renderAll() {
       el.style.setProperty("--p-meta", String(state.opts.metaSize));
     }
   });
-  const isMarking = state.layout === "marking";
-  const hasData = state.rows.length > 0 || isMarking;
+  const isBanner = state.layout === "marking" || state.layout === "simple";
+  const hasData = state.rows.length > 0 || isBanner;
   $("#printBtn").disabled = !hasData;
   const t = AVERY_TEMPLATES[state.template];
   $("#printNote").textContent = !hasData
     ? "No preview? Upload a CSV first."
-    : (isMarking
-        ? (t.fullBleed
-            ? "Marking label — full-bleed sheet, print at 100% with margins set to 'none'. No CSV needed; the tick circle is ticked by hand after printing."
-            : "Marking label — print at 100%. No CSV needed; the tick circle is ticked by hand after printing.")
+    : (isBanner
+        ? (state.layout === "simple"
+            ? "WALT & WILF label — print at 100%. No CSV needed; the circle is coloured in by hand."
+            : (t.fullBleed
+                ? "Marking label — full-bleed sheet, print at 100% with margins set to 'none'. No CSV needed; the tick circle is ticked by hand after printing."
+                : "Marking label — print at 100%. No CSV needed; the tick circle is ticked by hand after printing."))
         : (state.graph
             ? "Experimental graphic test — print at 100% scale. Print one sheet first before running the set."
             : (t.fullBleed
@@ -1134,7 +1195,7 @@ function renderAll() {
  * ===================================================================== */
 const LAYOUT_NAMES = {
   classic: "Classic", badge: "Badge", minimal: "Minimal",
-  stack: "Logo top", marking: "WILF banner",
+  stack: "Logo top", marking: "Story-club banner content", simple: "WALT & WILF",
 };
 const FONT_NAMES = {
   "": "Default", comic: "Comic Sans", georgia: "Georgia",
@@ -1190,6 +1251,414 @@ function setMapStatus() {
 }
 
 /* =====================================================================
+ *  TRAY LABELS mode
+ *  A separate, self-contained mode for classroom tray / drawer labels:
+ *  free-positioned A4 sheets (not Avery grids), original CSS+SVG
+ *  templates, per-label editing. Everything stays in the browser.
+ * ===================================================================== */
+const TRAY_SIZES = {
+  small: { w: 60, h: 30 },
+  medium: { w: 90, h: 40 },
+  large: { w: 100, h: 50 },
+};
+const TRAY_MARGIN = 8;   /* printable page margin, mm */
+
+const TRAY_TEMPLATES = [
+  { slug: "pastel", name: "Modern pastel", bg: "#f6f1fb", color: "#4b5563", decor: "" },
+  { slug: "rainbow", name: "Rainbow classroom", bg: "#fffdf7", color: "#1f2937",
+    decor: '<svg class="tray-svg-rainbow" viewBox="0 0 120 60" aria-hidden="true">' +
+      '<path d="M10 60 A50 50 0 0 1 110 60" fill="none" stroke="#e85d5d" stroke-width="7"/>' +
+      '<path d="M22 60 A38 38 0 0 1 98 60" fill="none" stroke="#f0a24b" stroke-width="7"/>' +
+      '<path d="M34 60 A26 26 0 0 1 86 60" fill="none" stroke="#4fae6e" stroke-width="7"/>' +
+      '<path d="M46 60 A14 14 0 0 1 74 60" fill="none" stroke="#5b8def" stroke-width="7"/>' +
+      '</svg>' },
+  { slug: "nature", name: "Nature & woodland", bg: "#eef4e6", color: "#3c5a3c",
+    decor: '<svg class="tray-svg-leaf" viewBox="0 0 40 40" aria-hidden="true">' +
+      '<path d="M20 4 C10 12 8 26 20 36 C32 26 30 12 20 4 Z" fill="#8fbf7f"/>' +
+      '<path d="M20 8 L20 33" stroke="#5d8a4e" stroke-width="1.6" fill="none"/></svg>' },
+  { slug: "bold", name: "Bold classroom", bg: "#1d4ed8", color: "#ffffff", decor: "" },
+];
+const TRAY_TPL = (slug) => TRAY_TEMPLATES.filter((t) => t.slug === slug)[0] || TRAY_TEMPLATES[0];
+
+const TRAY_STARTERS = [
+  "Maths", "English", "Reading", "Science", "Art", "Homework",
+  "Pencils", "Glue sticks", "Scissors", "Display work",
+];
+
+const trayState = {
+  labels: [],            // {id, text, subtext, tpl, bg, color, scale, align, decor}
+  nextId: 1,
+  activeId: null,
+  size: "medium",
+  gap: 3,
+  cut: "dashed",
+  defaultTpl: "pastel",
+};
+
+/* How many labels fit on one A4 page at the given size/gap/margin. */
+function trayPlan(labels, sizeKey, gap, margin) {
+  const s = TRAY_SIZES[sizeKey] || TRAY_SIZES.medium;
+  const g = clamp(Number(gap) || 0, 0, 20);
+  const m = (typeof margin === "number") ? margin : TRAY_MARGIN;
+  const cols = Math.max(1, Math.floor((PAGE_W - 2 * m + g) / (s.w + g)));
+  const rows = Math.max(1, Math.floor((PAGE_H - 2 * m + g) / (s.h + g)));
+  const per = cols * rows;
+  const pages = [];
+  (labels || []).forEach((l, i) => {
+    const p = Math.floor(i / per), k = i % per;
+    const col = k % cols, row = Math.floor(k / cols);
+    (pages[p] = pages[p] || []).push({
+      label: l,
+      x: +(m + col * (s.w + g)).toFixed(2),
+      y: +(m + row * (s.h + g)).toFixed(2),
+      w: s.w, h: s.h,
+    });
+  });
+  return { pages, cols, rows, per, size: s };
+}
+
+/* Title shrinks as wording gets longer so text stays on the label. */
+function trayTitleMm(l) {
+  const s = TRAY_SIZES[trayState.size] || TRAY_SIZES.medium;
+  const base = s.h * 0.30;
+  const len = ((l && l.text) || "").length || 1;
+  const shrink = clamp(12 / Math.max(len, 12), 0.5, 1);
+  return Math.max(2.2, base * shrink * ((l && l.scale) || 1));
+}
+const traySubMm = (l) => Math.max(1.8, trayTitleMm(l) * 0.5);
+
+function trayDecorHtml(l) {
+  const d = l && l.decor;
+  if (d === "bar") return '<span class="tray-decor tray-decor-bar" aria-hidden="true"></span>';
+  if (d === "dots") return '<span class="tray-decor tray-decor-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+  if (d === "star") return '<span class="tray-decor tray-decor-star" aria-hidden="true">★</span>';
+  return "";
+}
+
+function trayLabelHtml(l) {
+  const tpl = TRAY_TPL(l.tpl);
+  const bg = l.bg || tpl.bg, color = l.color || tpl.color;
+  const align = (l.align === "left" || l.align === "right") ? l.align : "center";
+  return (
+    '<div class="tray-label tray-tpl-' + tpl.slug + '" style="--tray-bg:' + esc(bg) +
+      ';--tray-fg:' + esc(color) + ';text-align:' + align + ';">' +
+    (tpl.decor ? '<span class="tray-tpl-decor" aria-hidden="true">' + tpl.decor + "</span>" : "") +
+    '<span class="tray-inner">' +
+      '<span class="tray-title" style="font-size:' + trayTitleMm(l).toFixed(2) + 'mm;">' + esc(l.text || "") + "</span>" +
+      (l.subtext ? '<span class="tray-sub" style="font-size:' + traySubMm(l).toFixed(2) + 'mm;">' + esc(l.subtext) + "</span>" : "") +
+      trayDecorHtml(l) +
+    "</span></div>"
+  );
+}
+
+/* Full A4 pages: same .sheet / .print-sheet pipeline as pupil labels. */
+function traySheetsHtml(printMode) {
+  const plan = trayPlan(trayState.labels, trayState.size, trayState.gap, TRAY_MARGIN);
+  const cut = (trayState.cut === "solid" || trayState.cut === "none") ? trayState.cut : "dashed";
+  return plan.pages.map((page) =>
+    '<div class="sheet tray-page' + (printMode ? " print-sheet" : "") + '"><div class="sheet-pad">' +
+    page.map((c) =>
+      '<div class="tray-cell cut-' + cut + '" style="left:' + c.x + "mm;top:" + c.y +
+      "mm;width:" + c.w.toFixed(2) + "mm;height:" + c.h.toFixed(2) + 'mm;">' +
+      trayLabelHtml(c.label) + "</div>"
+    ).join("") +
+    "</div></div>"
+  ).join("");
+}
+
+/* --- label list operations (pure; used by the editor and the tests) --- */
+function trayAddLabel(text) {
+  const l = {
+    id: trayState.nextId++,
+    text: String(text || "").trim() || "New label",
+    subtext: "",
+    tpl: trayState.defaultTpl,
+    bg: null, color: null,
+    scale: 1, align: "center", decor: "none",
+  };
+  trayState.labels.push(l);
+  trayState.activeId = l.id;
+  return l;
+}
+function trayActiveLabel() {
+  return trayState.labels.filter((l) => l.id === trayState.activeId)[0] || null;
+}
+function trayDuplicateLabel(id) {
+  const i = trayState.labels.findIndex((l) => l.id === id);
+  if (i < 0) return null;
+  const src = trayState.labels[i];
+  const copy = Object.assign({}, src, { id: trayState.nextId++ });
+  trayState.labels.splice(i + 1, 0, copy);
+  trayState.activeId = copy.id;
+  return copy;
+}
+function trayRemoveLabel(id) {
+  const i = trayState.labels.findIndex((l) => l.id === id);
+  if (i < 0) return false;
+  trayState.labels.splice(i, 1);
+  if (trayState.activeId === id) {
+    const next = trayState.labels[Math.min(i, trayState.labels.length - 1)];
+    trayState.activeId = next ? next.id : null;
+  }
+  return true;
+}
+function trayMoveLabel(id, dir) {
+  const i = trayState.labels.findIndex((l) => l.id === id);
+  const j = dir === "up" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= trayState.labels.length) return false;
+  const tmp = trayState.labels[i];
+  trayState.labels[i] = trayState.labels[j];
+  trayState.labels[j] = tmp;
+  return true;
+}
+function trayAddStarters() {
+  let added = 0;
+  TRAY_STARTERS.forEach((text) => {
+    if (!trayState.labels.some((l) => l.text === text)) {
+      trayState.labels.push({
+        id: trayState.nextId++, text: text, subtext: "",
+        tpl: trayState.defaultTpl, bg: null, color: null,
+        scale: 1, align: "center", decor: "none",
+      });
+      added++;
+    }
+  });
+  return added;
+}
+function trayClearLabels() {
+  trayState.labels = [];
+  trayState.activeId = null;
+}
+function trayMetaText() {
+  const n = trayState.labels.length;
+  if (!n) return "No labels yet.";
+  const s = TRAY_SIZES[trayState.size] || TRAY_SIZES.medium;
+  const pages = Math.max(1, trayPlan(trayState.labels, trayState.size, trayState.gap, TRAY_MARGIN).pages.length);
+  return n + " label" + (n === 1 ? "" : "s") + " · " + pages +
+    " page" + (pages === 1 ? "" : "s") + " · " + s.w + " × " + s.h + " mm";
+}
+
+/* --- DOM rendering (screen editor + preview) --- */
+function trayRender() {
+  const grid = $("#trayTplGrid");
+  if (grid && !grid.dataset.built) {
+    grid.dataset.built = "1";
+    grid.innerHTML = TRAY_TEMPLATES.map((t) =>
+      '<button type="button" class="tray-tpl-card tray-tpl-' + t.slug + '" data-tpl="' + t.slug +
+      '" role="radio" aria-checked="false">' +
+      '<span class="tray-tpl-swatch" aria-hidden="true">' + (t.decor || "") + "</span>" +
+      '<span class="tray-tpl-name">' + t.name + "</span></button>"
+    ).join("");
+    grid.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-tpl]");
+      if (!card) return;
+      trayState.defaultTpl = card.dataset.tpl;
+      const active = trayActiveLabel();
+      if (active) { active.tpl = card.dataset.tpl; active.bg = null; active.color = null; }
+      trayRender();
+    });
+  }
+  const sizeSel = $("#traySize"), gapSel = $("#trayGap"), cutSel = $("#trayCut");
+  if (sizeSel) sizeSel.value = trayState.size;
+  if (gapSel) gapSel.value = String(trayState.gap);
+  if (cutSel) cutSel.value = trayState.cut;
+
+  const labels = trayState.labels;
+  const list = $("#trayList");
+  if (list) {
+    list.innerHTML = labels.map((l, i) =>
+      '<li class="tray-row' + (l.id === trayState.activeId ? " is-active" : "") + '" data-id="' + l.id + '">' +
+      '<button type="button" class="tray-row-main" data-act="edit">' +
+      '<span class="tray-row-num">' + (i + 1) + "</span>" +
+      '<span class="tray-row-text">' + esc(l.text || "(no text)") +
+      (l.subtext ? " <small>" + esc(l.subtext) + "</small>" : "") + "</span></button>" +
+      '<span class="tray-row-btns">' +
+      '<button type="button" class="tray-icon-btn" data-act="up" aria-label="Move label ' + (i + 1) + ' up" title="Move up">↑</button>' +
+      '<button type="button" class="tray-icon-btn" data-act="down" aria-label="Move label ' + (i + 1) + ' down" title="Move down">↓</button>' +
+      '<button type="button" class="tray-icon-btn" data-act="dup" aria-label="Duplicate label ' + (i + 1) + '" title="Duplicate">⧉</button>' +
+      '<button type="button" class="tray-icon-btn" data-act="del" aria-label="Delete label ' + (i + 1) + '" title="Delete">✕</button>' +
+      "</span></li>"
+    ).join("");
+  }
+  const emptyNote = $("#trayEmpty");
+  if (emptyNote) emptyNote.hidden = labels.length > 0;
+
+  const active = trayActiveLabel();
+  const ed = $("#trayEditor");
+  if (ed) ed.hidden = !active;
+  if (active) {
+    const idx = labels.indexOf(active) + 1;
+    const num = $("#trayEditNum");
+    if (num) num.textContent = "#" + idx;
+    $("#trayText").value = active.text || "";
+    $("#traySubtext").value = active.subtext || "";
+    $("#trayBg").value = active.bg || TRAY_TPL(active.tpl).bg;
+    $("#trayFg").value = active.color || TRAY_TPL(active.tpl).color;
+    $("#trayFontScale").value = String(active.scale || 1);
+    $("#trayDecor").value = active.decor || "none";
+    $$("#trayEditor .tray-align-btn").forEach((b) => {
+      const on = b.dataset.align === (active.align || "center");
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-checked", String(on));
+    });
+    $$("#trayTplGrid [data-tpl]").forEach((c) => {
+      const on = c.dataset.tpl === active.tpl;
+      c.classList.toggle("selected", on);
+      c.setAttribute("aria-checked", String(on));
+    });
+    const lp = $("#trayLivePreview");
+    if (lp) {
+      lp.innerHTML = trayLabelHtml(active);
+      const s = TRAY_SIZES[trayState.size] || TRAY_SIZES.medium;
+      const px = (mm) => mm * 3.7795;
+      const scale = Math.min(296 / px(s.w), 92 / px(s.h));
+      lp.style.width = s.w + "mm";
+      lp.style.height = s.h + "mm";
+      lp.style.transform = "scale(" + scale.toFixed(3) + ")";
+      lp.style.transformOrigin = "top left";
+    }
+  } else {
+    $$("#trayTplGrid [data-tpl]").forEach((c) => {
+      const on = c.dataset.tpl === trayState.defaultTpl && !labels.length;
+      c.classList.toggle("selected", on);
+      c.setAttribute("aria-checked", String(on));
+    });
+  }
+
+  const cont = $("#traySheetContainer");
+  if (cont) cont.innerHTML = labels.length ? traySheetsHtml(false) : "";
+  const meta = $("#trayMeta");
+  if (meta) meta.textContent = trayMetaText();
+  const pb = $("#trayPrintBtn");
+  if (pb) pb.disabled = !labels.length;
+  const note = $("#trayPrintNote");
+  if (note) {
+    note.textContent = labels.length
+      ? "Print at 100% / Actual size, margins None, background graphics On. Cut along the lines."
+      : "Add a label to start. Print at 100% / Actual size, margins None, background graphics On.";
+  }
+  const root = $("#printRoot");
+  if (root && document.body && document.body.classList &&
+      document.body.classList.contains("tray-mode")) {
+    root.innerHTML = labels.length ? traySheetsHtml(true) : "";
+  }
+}
+
+function setTrayMode(on) {
+  if (document.body && document.body.classList) {
+    document.body.classList.toggle("tray-mode", !!on);
+  }
+  const b1 = $("#modeLabels"), b2 = $("#modeTray");
+  if (b1) { b1.classList.toggle("is-active", !on); b1.setAttribute("aria-checked", String(!on)); }
+  if (b2) { b2.classList.toggle("is-active", !!on); b2.setAttribute("aria-checked", String(!!on)); }
+  if (on) trayRender();
+  else renderAll();
+}
+
+function initTrayEvents() {
+  const modeLabels = $("#modeLabels"), modeTray = $("#modeTray");
+  if (modeLabels) modeLabels.addEventListener("click", () => setTrayMode(false));
+  if (modeTray) modeTray.addEventListener("click", () => setTrayMode(true));
+
+  const addBtn = $("#trayAddBtn");
+  if (addBtn) addBtn.addEventListener("click", () => {
+    trayAddLabel("");
+    trayRender();
+    const t = $("#trayText");
+    if (t) { t.focus(); t.select(); }
+  });
+  const starterBtn = $("#trayStarterBtn");
+  if (starterBtn) starterBtn.addEventListener("click", () => { trayAddStarters(); trayRender(); });
+  const clearBtn = $("#trayClearBtn");
+  if (clearBtn) clearBtn.addEventListener("click", () => {
+    const n = trayState.labels.length;
+    if (!n) return;
+    if (window.confirm("Remove all " + n + " tray label" + (n === 1 ? "" : "s") + "?")) {
+      trayClearLabels();
+      trayRender();
+    }
+  });
+
+  const list = $("#trayList");
+  if (list) list.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const row = btn.closest("[data-id]");
+    if (!row) return;
+    const id = Number(row.dataset.id);
+    const act = btn.dataset.act;
+    if (act === "edit") trayState.activeId = id;
+    else if (act === "up" || act === "down") trayMoveLabel(id, act);
+    else if (act === "dup") trayDuplicateLabel(id);
+    else if (act === "del") trayRemoveLabel(id);
+    trayRender();
+  });
+
+  const bindLabel = (sel, key, evt) => {
+    const el = $(sel);
+    if (!el) return;
+    el.addEventListener(evt || "input", () => {
+      const active = trayActiveLabel();
+      if (!active) return;
+      active[key] = el.value;
+      trayRender();
+    });
+  };
+  bindLabel("#trayText", "text");
+  bindLabel("#traySubtext", "subtext");
+  bindLabel("#trayFontScale", "scale", "change");
+  bindLabel("#trayDecor", "decor", "change");
+
+  const bg = $("#trayBg"), fg = $("#trayFg");
+  if (bg) bg.addEventListener("input", () => {
+    const a = trayActiveLabel();
+    if (a) { a.bg = bg.value; trayRender(); }
+  });
+  if (fg) fg.addEventListener("input", () => {
+    const a = trayActiveLabel();
+    if (a) { a.color = fg.value; trayRender(); }
+  });
+  const colourReset = $("#trayColourReset");
+  if (colourReset) colourReset.addEventListener("click", () => {
+    const a = trayActiveLabel();
+    if (!a) return;
+    a.bg = null; a.color = null;
+    trayRender();
+  });
+
+  $$("#trayEditor .tray-align-btn").forEach((b) => {
+    b.addEventListener("click", () => {
+      const a = trayActiveLabel();
+      if (!a) return;
+      a.align = b.dataset.align;
+      trayRender();
+    });
+  });
+
+  const dupBtn = $("#trayDupBtn"), delBtn = $("#trayDeleteBtn");
+  if (dupBtn) dupBtn.addEventListener("click", () => {
+    const a = trayActiveLabel();
+    if (a) { trayDuplicateLabel(a.id); trayRender(); }
+  });
+  if (delBtn) delBtn.addEventListener("click", () => {
+    const a = trayActiveLabel();
+    if (a) { trayRemoveLabel(a.id); trayRender(); }
+  });
+
+  const sizeSel = $("#traySize"), gapSel = $("#trayGap"), cutSel = $("#trayCut");
+  if (sizeSel) sizeSel.addEventListener("change", () => { trayState.size = sizeSel.value; trayRender(); });
+  if (gapSel) gapSel.addEventListener("change", () => { trayState.gap = Number(gapSel.value) || 0; trayRender(); });
+  if (cutSel) cutSel.addEventListener("change", () => { trayState.cut = cutSel.value; trayRender(); });
+
+  const printBtn = $("#trayPrintBtn");
+  if (printBtn) printBtn.addEventListener("click", () => {
+    const root = $("#printRoot");
+    if (root) root.innerHTML = traySheetsHtml(true);
+    window.print();
+  });
+}
+
+/* =====================================================================
  *  Options sync + setup export / import
  *  Setup = layout, template, options, marking content and logo, saved
  *  as a JSON file the teacher downloads and reloads later. Nothing is
@@ -1227,9 +1696,21 @@ function syncMarkingInputs() {
   if (storyClear) storyClear.hidden = !state.banner.storyImage;
 }
 
+/* Push current WALT & WILF values back into the simple editor fields. */
+function syncSimpleInputs() {
+  const walt = $("#smWalt");
+  if (walt) walt.value = state.simple.walt || "";
+  [1, 2, 3, 4].forEach((i) => {
+    const el = $("#smWilf" + i);
+    if (el) el.value = (state.simple.wilf && state.simple.wilf[i - 1]) || "";
+  });
+}
+
 function renderMarkingEditor() {
   const ed = $("#markingEditor");
   if (ed) ed.hidden = state.layout !== "marking";
+  const se = $("#simpleEditor");
+  if (se) se.hidden = state.layout !== "simple";
 }
 
 /* Refresh the logo upload row after a setup import. */
@@ -1270,6 +1751,7 @@ function syncControlsFromState() {
   if (sort) sort.value = state.sort;
   renderMarkingEditor();
   syncMarkingInputs();
+  syncSimpleInputs();
   refreshLogoRow();
 }
 
@@ -1283,6 +1765,7 @@ function exportSetup() {
     sort: state.sort,
     opts: Object.assign({}, state.opts),
     banner: Object.assign({}, state.banner, { wilf: (state.banner.wilf || []).slice() }),
+    simple: { walt: state.simple.walt, wilf: (state.simple.wilf || []).slice() },
     logoDataUrl: state.logoDataUrl || null,
   };
 }
@@ -1321,6 +1804,13 @@ function applySetup(data) {
     }
     if (typeof b.clubLogo === "string" || b.clubLogo === null) state.banner.clubLogo = b.clubLogo;
     if (typeof b.storyImage === "string" || b.storyImage === null) state.banner.storyImage = b.storyImage;
+  }
+  const sm = data.simple;
+  if (sm && typeof sm === "object") {
+    if (typeof sm.walt === "string") state.simple.walt = sm.walt;
+    if (Array.isArray(sm.wilf)) {
+      state.simple.wilf = [0, 1, 2, 3].map((i) => (typeof sm.wilf[i] === "string" ? sm.wilf[i] : ""));
+    }
   }
   if (typeof data.logoDataUrl === "string" || data.logoDataUrl === null) state.logoDataUrl = data.logoDataUrl;
 
@@ -1632,7 +2122,20 @@ function initEvents() {
     syncMarkingInputs();
   };
   renderMarkingEditor();
+  const wireSimpleEditor = () => {
+    const walt = $("#smWalt");
+    if (walt) walt.addEventListener("input", () => { state.simple.walt = walt.value; renderAll(); });
+    [1, 2, 3, 4].forEach((i) => {
+      const el = $("#smWilf" + i);
+      if (!el) return;
+      el.addEventListener("input", () => {
+        state.simple.wilf = [1, 2, 3, 4].map((j) => ($("#smWilf" + j) || {}).value || "");
+        renderAll();
+      });
+    });
+  };
   wireMarkingEditor();
+  wireSimpleEditor();
 
   /* --- Experimental graphic templates (test feature, isolated) --- */
   const selectGraphic = (slug) => {
@@ -1802,6 +2305,7 @@ function initEvents() {
   window.addEventListener("resize", () => { /* sheets are fixed-size, nothing to do */ });
 
   initLogoUpload();
+  initTrayEvents();
 }
 
 function readFile(f) {

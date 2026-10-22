@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=21">
+<link rel="stylesheet" href="styles.css?v=24">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-NDG7QPBNRJ"></script>
@@ -77,6 +77,10 @@
       </div>
     </div>
     <nav class="header-actions" aria-label="Header actions">
+      <div class="mode-switch" role="radiogroup" aria-label="Label type">
+        <button type="button" class="mode-btn is-active" id="modeLabels" role="radio" aria-checked="true">Pupil labels</button>
+        <button type="button" class="mode-btn" id="modeTray" role="radio" aria-checked="false">Tray labels</button>
+      </div>
       <button type="button" class="header-link" id="exportSetup" title="Download your layout, fonts and content as a file">Export setup…</button>
       <button type="button" class="header-link" id="importSetup" title="Load a saved setup file">Import setup…</button>
       <input type="file" id="importSetupFile" accept="application/json,.json" hidden>
@@ -289,7 +293,8 @@
         <option value="badge">Badge style</option>
         <option value="minimal">Minimal sticker</option>
         <option value="stack">Logo top</option>
-        <option value="marking">WILF marking label</option>
+        <option value="marking">Story-club banner content</option>
+        <option value="simple">WALT &amp; WILF</option>
       </select>
 
       <div class="layout-cards" role="radiogroup" aria-label="Label style">
@@ -341,18 +346,34 @@
               </span>
             </span>
             <span class="pm-row">
-              <span class="pm-vocab"></span>
               <span class="pm-wilf">
                 <span class="pm-wilf-h">WILF</span>
                 <span class="pm-crit"><i></i></span>
                 <span class="pm-crit"><i></i></span>
                 <span class="pm-crit"><i></i></span>
               </span>
+              <span class="pm-vocab"></span>
               <span class="pm-circle"></span>
             </span>
           </span>
-          <span class="layout-name">WILF marking label</span>
+          <span class="layout-name">Story-club banner content</span>
           <span class="layout-desc">Story banner with WILF checklist &amp; tick circle</span>
+        </button>
+        <button type="button" class="layout-card" data-layout="simple" role="radio" aria-checked="false">
+          <span class="l-prev l-prev-simple">
+            <span class="ps-walt"><b>WALT</b><i></i></span>
+            <span class="ps-row">
+              <span class="ps-wilf">
+                <span class="ps-wilf-h">WILF</span>
+                <span class="ps-crit"><i></i></span>
+                <span class="ps-crit"><i></i></span>
+                <span class="ps-crit"><i></i></span>
+              </span>
+              <span class="ps-circle"></span>
+            </span>
+          </span>
+          <span class="layout-name">WALT &amp; WILF</span>
+          <span class="layout-desc">WALT band, WILF tick box &amp; traffic-light circle</span>
         </button>
       </div>
 
@@ -420,7 +441,7 @@
             <label for="mkChar">Subtitle / character
               <input type="text" id="mkChar">
             </label>
-            <label for="mkVocab">Vocabulary / word bank <span class="hint-inline">one per line</span>
+            <label for="mkVocab">Vocabulary / word bank <span class="hint-inline">one per line (up to 4 words)</span>
               <textarea id="mkVocab" rows="3"></textarea>
             </label>
             <div class="marking-imgs">
@@ -441,6 +462,25 @@
               <input type="text" id="mkWilf2" placeholder=". (Full stop)">
               <input type="text" id="mkWilf3" placeholder="word with prefix un">
               <input type="text" id="mkWilf4" placeholder="(optional 4th success criterion)">
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="simpleEditor" class="marking-editor" hidden>
+        <details class="adv-details" open>
+          <summary>WALT &amp; WILF content</summary>
+          <p class="hint-text">This style prints the same WALT &amp; WILF label on every sticker — sized to the wide 99×34&#8201;mm L7162 sheet. Edits apply instantly; no CSV needed. Children colour the circle in as a traffic-light check.</p>
+          <div class="marking-fields">
+            <label for="smWalt">WALT (what we are learning today)
+              <textarea id="smWalt" rows="2"></textarea>
+            </label>
+            <div class="marking-wilfs">
+              <label class="hint-inline" for="smWilf1">WILF criteria — tick boxes (leave blank to skip):</label>
+              <input type="text" id="smWilf1" placeholder="I can...">
+              <input type="text" id="smWilf2" placeholder="I can...">
+              <input type="text" id="smWilf3" placeholder="I can...">
+              <input type="text" id="smWilf4" placeholder="(optional 4th criterion)">
             </div>
           </div>
         </details>
@@ -584,6 +624,135 @@
 
 </main>
 
+<!-- ================= TRAY LABELS MODE ================= -->
+<section class="layout tray-layout" id="traySection" aria-label="Tray labels">
+
+  <!-- Tray editor -->
+  <div class="panel controls-panel tray-controls">
+    <div class="card-head">
+      <h2 class="card-title">Tray labels</h2>
+      <p class="card-sub">Design labels for trays, drawers and boxes — then print on plain A4 paper.</p>
+    </div>
+
+    <section class="step" aria-label="Tray label template and size">
+      <h3 class="step-title">1 · Template &amp; size</h3>
+      <div class="tray-tpl-grid" role="radiogroup" aria-label="Tray label template" id="trayTplGrid"></div>
+      <div class="style-row">
+        <span class="style-row-label">Sheet setup</span>
+        <span class="style-pick"><label for="traySize">Label size</label>
+          <select id="traySize">
+            <option value="small">Small · 60 × 30 mm</option>
+            <option value="medium" selected>Medium · 90 × 40 mm</option>
+            <option value="large">Large · 100 × 50 mm</option>
+          </select>
+        </span>
+        <span class="style-pick"><label for="trayGap">Gap</label>
+          <select id="trayGap">
+            <option value="0">0 mm</option>
+            <option value="2">2 mm</option>
+            <option value="3" selected>3 mm</option>
+            <option value="4">4 mm</option>
+            <option value="5">5 mm</option>
+            <option value="8">8 mm</option>
+          </select>
+        </span>
+        <span class="style-pick"><label for="trayCut">Borders</label>
+          <select id="trayCut">
+            <option value="dashed" selected>Dashed cut lines</option>
+            <option value="solid">Solid border</option>
+            <option value="none">None</option>
+          </select>
+        </span>
+      </div>
+      <p class="hint-text">Label sizes are a starting point — measure your trays and test one page before printing the full set.</p>
+    </section>
+
+    <section class="step" aria-label="Your tray labels">
+      <h3 class="step-title">2 · Your labels</h3>
+      <div class="tray-actions">
+        <button type="button" class="btn-soft btn-sm" id="trayAddBtn">+ Add label</button>
+        <button type="button" class="btn-ghost btn-sm" id="trayStarterBtn">Add common classroom labels</button>
+        <button type="button" class="btn-ghost btn-sm" id="trayClearBtn">Clear all…</button>
+      </div>
+      <ul class="tray-list" id="trayList"></ul>
+      <p class="hint-text" id="trayEmpty">No labels yet — add one above, or start from the common classroom list.</p>
+
+      <div class="tray-editor" id="trayEditor" hidden>
+        <h4 class="tray-editor-title">Edit label <span id="trayEditNum"></span></h4>
+        <label class="tray-field" for="trayText">Text
+          <input type="text" id="trayText" maxlength="60" placeholder="Maths" autocomplete="off">
+        </label>
+        <label class="tray-field" for="traySubtext">Second line <span class="hint-inline">optional, shown smaller</span>
+          <input type="text" id="traySubtext" maxlength="80" placeholder="Times tables" autocomplete="off">
+        </label>
+        <div class="tray-colour-row">
+          <label for="trayBg">Background</label>
+          <input type="color" id="trayBg" value="#f6f1fb" aria-label="Label background colour">
+          <label for="trayFg">Text</label>
+          <input type="color" id="trayFg" value="#374151" aria-label="Label text colour">
+          <button type="button" class="btn-ghost btn-sm" id="trayColourReset">Template colours</button>
+        </div>
+        <div class="style-row">
+          <span class="style-row-label">Text options</span>
+          <span class="style-pick"><label for="trayFontScale">Size</label>
+            <select id="trayFontScale">
+              <option value="0.75">×small</option>
+              <option value="1" selected>normal</option>
+              <option value="1.25">large</option>
+              <option value="1.5">×large</option>
+            </select>
+          </span>
+          <span class="style-pick"><span class="style-row-label" id="trayAlignLabel">Align</span>
+            <span class="tray-align" role="radiogroup" aria-labelledby="trayAlignLabel">
+              <button type="button" class="tray-align-btn" data-align="left" role="radio" aria-checked="false">Left</button>
+              <button type="button" class="tray-align-btn is-active" data-align="center" role="radio" aria-checked="true">Centre</button>
+              <button type="button" class="tray-align-btn" data-align="right" role="radio" aria-checked="false">Right</button>
+            </span>
+          </span>
+          <span class="style-pick"><label for="trayDecor">Decoration</label>
+            <select id="trayDecor">
+              <option value="none" selected>None</option>
+              <option value="bar">Underline bar</option>
+              <option value="dots">Three dots</option>
+              <option value="star">Star</option>
+            </select>
+          </span>
+        </div>
+        <div class="tray-live">
+          <span class="hint-inline">Preview</span>
+          <div class="tray-live-box" id="trayLivePreview"></div>
+        </div>
+        <div class="tray-row-actions">
+          <button type="button" class="btn-ghost btn-sm" id="trayDupBtn">Duplicate</button>
+          <button type="button" class="btn-ghost btn-sm" id="trayDeleteBtn">Delete</button>
+          <span class="hint-inline">Use ↑ ↓ in the list to reorder</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="privacy-strip">
+      <span>🔒 Tray text stays on your device — nothing is uploaded.</span>
+      <a href="print-guide.html" target="_blank" rel="noopener">Print-settings guide</a>
+    </div>
+  </div>
+
+  <!-- Tray preview -->
+  <div class="panel preview-panel tray-preview">
+    <div class="preview-head">
+      <h2 class="panel-title">Preview</h2>
+      <span class="preview-meta" id="trayMeta">No labels yet.</span>
+    </div>
+    <div class="preview-stage">
+      <span class="a4-badge">A4 · actual size</span>
+      <div id="traySheetContainer" class="sheet-scroll"></div>
+    </div>
+    <div class="preview-foot">
+      <button class="btn-primary" id="trayPrintBtn" disabled>🖨️ Print / Save as PDF</button>
+      <p class="print-note" id="trayPrintNote">Add a label to start. Print at 100% / Actual size, margins None, background graphics On.</p>
+    </div>
+  </div>
+</section>
+
 <footer class="app-footer">
   <span id="footerText">Free label maker for schools — open source, pupil data never leaves the device</span>
   <span class="footer-sep">·</span>
@@ -597,7 +766,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=25"></script>
+<script src="app.js?v=28"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");
