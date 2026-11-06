@@ -1079,3 +1079,174 @@ body.tray-mode > main.layout { display: none; }
   .tray-tpl-grid { grid-template-columns: repeat(2, 1fr); }
   .tray-row { flex-wrap: wrap; }
 }
+
+/* ============================================================
+   ID CARDS (CR80) MODE
+   One 85.6 x 54 mm card per page. The @page rule is swapped in by
+   app.js while ID mode is active so the card printer gets CR80,
+   not A4.
+   ============================================================ */
+#idSection { display: none; }
+body.id-mode #idSection { display: grid; }
+body.id-mode > main.layout { display: none; }
+
+.id-tpl-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 12px;
+}
+.id-tpl-card {
+  position: relative; display: flex; flex-direction: column; gap: 5px;
+  border: 1.5px solid var(--border); border-radius: 11px; padding: 8px;
+  cursor: pointer; background: #fff; font: inherit; text-align: center;
+  transition: border-color .12s, box-shadow .12s;
+}
+.id-tpl-card:hover { border-color: #9db8dd; }
+.id-tpl-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+.id-tpl-thumb {
+  display: block; height: 46px; border-radius: 6px; position: relative;
+  overflow: hidden; border: 1px solid #e3ecf8; background: #fff;
+}
+.id-tpl-thumb::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 12px;
+  background: var(--primary);
+}
+.id-tpl-thumb::after {
+  content: ""; position: absolute; left: 7px; top: 18px; width: 12px; height: 16px;
+  border-radius: 2px; background: #dbe4f0;
+  box-shadow: 20px -1px 0 -2px #c9d5e4, 20px 5px 0 -2px #c9d5e4,
+              20px 11px 0 -2px #dde5ef;
+}
+.id-tpl-card.id-thumb-stripe .id-tpl-thumb::before {
+  top: 0; bottom: 0; right: auto; width: 12px; height: auto;
+}
+.id-tpl-card.id-thumb-stripe .id-tpl-thumb::after { left: 18px; }
+.id-tpl-card.id-thumb-clean .id-tpl-thumb::before { height: 6px; }
+.id-tpl-name { font-size: 11.5px; font-weight: 700; color: var(--ink); }
+
+.id-colour-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin: 8px 0 10px; }
+.id-swatch {
+  width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 0 0 1.5px var(--border);
+  transition: box-shadow .12s, transform .12s;
+}
+.id-swatch:hover { transform: scale(1.08); }
+.id-swatch.is-active { box-shadow: 0 0 0 3px rgba(29,78,216,.42); }
+.id-colour-custom {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12.5px; font-weight: 700; color: var(--body); margin-bottom: 4px;
+}
+.id-colour-custom input[type="color"] {
+  width: 40px; height: 30px; padding: 1px; border: 1.5px solid var(--border);
+  border-radius: 8px; background: #fff; cursor: pointer;
+}
+.id-controls .style-row { margin-top: 10px; }
+.id-controls .tray-field { margin-top: 9px; }
+
+/* --- The card itself (screen preview + print) --- */
+.sheet.id-print-sheet { width: 85.6mm; height: 54mm; }
+.id-card {
+  width: 100%; height: 100%; box-sizing: border-box; position: relative;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; color: #111827;
+  font-family: inherit; border-radius: 2.4mm;
+}
+.id-band {
+  flex: none; height: 13mm; box-sizing: border-box; position: relative;
+  background: var(--id-accent, #1d4ed8); color: var(--id-on, #fff);
+  display: flex; align-items: center; gap: 2.5mm;
+  padding: 1.8mm 3.5mm;
+}
+.id-band-school {
+  flex: 1; min-width: 0; font-size: 3mm; font-weight: 800; line-height: 1.1;
+  letter-spacing: .04em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.id-band-logo {
+  flex: none; width: 9mm; height: 9mm; box-sizing: border-box;
+  border-radius: 1.4mm; background: #fff; padding: 0.8mm;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.id-logo { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.id-logo-mono {
+  font-size: 3.2mm; font-weight: 900; line-height: 1;
+  color: var(--id-accent, #1d4ed8);
+}
+.id-main {
+  flex: 1; min-height: 0; display: flex; align-items: center;
+  gap: 3.5mm; padding: 3mm 3.5mm;
+}
+.id-photo {
+  flex: none; width: 19mm; height: 25mm; box-sizing: border-box;
+  border-radius: 1.6mm; overflow: hidden; position: relative;
+  background: #f1f5f9; border: 0.4mm solid rgba(17,24,39,.16);
+  display: flex; align-items: center; justify-content: center;
+}
+.id-photo-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.id-photo-ph {
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.8mm; color: #93a1b4;
+}
+.id-photo-sil { display: block; width: 8.5mm; height: 10.5mm; }
+.id-photo-sil svg { width: 100%; height: 100%; display: block; }
+.id-photo-cap {
+  font-size: 1.8mm; font-weight: 700; line-height: 1;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.id-details {
+  flex: 1; min-width: 0; display: flex; flex-direction: column;
+  justify-content: center; gap: 1mm;
+}
+.id-school {
+  display: none; font-size: 2.3mm; font-weight: 800; line-height: 1.15;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--id-accent, #1d4ed8);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.id-name {
+  font-weight: 800; line-height: 1.05; color: #111827;
+  overflow: hidden; overflow-wrap: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.id-job {
+  font-weight: 600; line-height: 1.15; color: #3f4a5a;
+  overflow: hidden; overflow-wrap: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.id-rule {
+  width: 10mm; height: 1.1mm; border-radius: 1mm;
+  background: var(--id-accent, #1d4ed8); margin-top: 0.8mm;
+}
+
+/* Side stripe: the band becomes a full-height colour edge. */
+.id-tpl-stripe .id-band {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 11mm; height: auto;
+  flex-direction: column; justify-content: flex-start; align-items: center;
+  gap: 2mm; padding: 3mm 1.6mm;
+}
+.id-tpl-stripe .id-band-school { display: none; }
+.id-tpl-stripe .id-band-logo { width: 7.8mm; height: 7.8mm; }
+.id-tpl-stripe .id-main { margin-left: 11mm; padding-left: 4mm; }
+.id-tpl-stripe .id-school { display: block; }
+
+/* Clean white: thin colour rule on top, photo on the right. */
+.id-tpl-clean .id-band {
+  height: 12mm; background: #fff; color: var(--id-accent, #1d4ed8);
+  border-bottom: 0.6mm solid var(--id-accent, #1d4ed8);
+}
+.id-tpl-clean .id-band-school { color: var(--id-accent, #1d4ed8); }
+.id-tpl-clean .id-band-logo { width: 8mm; height: 8mm; background: transparent; padding: 0; }
+.id-tpl-clean .id-main { flex-direction: row-reverse; }
+.id-tpl-clean .id-school { display: block; }
+.id-tpl-clean .id-photo { border-color: var(--id-accent, #1d4ed8); }
+
+@media screen and (max-width: 560px) {
+  .id-tpl-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .sheet.id-print-sheet {
+    width: 85.6mm !important; height: 54mm !important;
+    margin: 0; box-shadow: none;
+    page-break-after: always; break-after: page;
+  }
+  .sheet.id-print-sheet:last-child { page-break-after: auto; break-after: auto; }
+}

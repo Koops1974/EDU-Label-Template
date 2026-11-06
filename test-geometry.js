@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, buildSimpleCell, simpleContentHtml, markingContentHtml, effectiveLogoSrc, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText, trayState, trayPlan, traySheetsHtml, trayLabelHtml, trayAddLabel, trayDuplicateLabel, trayRemoveLabel, trayMoveLabel, trayAddStarters, trayClearLabels, trayActiveLabel, trayMetaText };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, buildSimpleCell, simpleContentHtml, markingContentHtml, effectiveLogoSrc, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText, trayState, trayPlan, traySheetsHtml, trayLabelHtml, trayAddLabel, trayDuplicateLabel, trayRemoveLabel, trayMoveLabel, trayAddStarters, trayClearLabels, trayActiveLabel, trayMetaText, ID_TEMPLATES, idCardHtml, idSheetsHtml, idMetaText, idNameMm, idJobMm, idOnColour, idPalette };"
   );
 eval(appSrc);
 
@@ -765,6 +765,94 @@ console.log("Tray labels (free A4 layout):");
   // Leave tray state clean for any future checks
   __app.trayClearLabels();
   ts.size = "medium"; ts.gap = 3; ts.cut = "dashed"; ts.defaultTpl = "pastel";
+}
+
+console.log("ID cards (CR80):");
+{
+  const saved = JSON.parse(JSON.stringify(state.idCard));
+  const png = "data:image/png;base64,AAAA";
+  state.logoDataUrl = null;
+  state.idCard = {
+    template: "band", colour: "#0d9488",
+    school: "Oakfield Primary School", name: "Alex Morgan",
+    jobTitle: "Year 4 Teacher", photo: null,
+  };
+
+  const card = __app.idCardHtml();
+  check(card.includes("Oakfield Primary School") && card.includes("Alex Morgan") &&
+        card.includes("Year 4 Teacher"), "card renders school, name and job title");
+  check(card.includes("id-tpl-band") && card.includes("--id-accent:#0d9488"),
+    "card carries the chosen template and accent colour");
+  check(card.includes("id-photo-ph") && !card.includes("id-photo-img"),
+    "photo placeholder renders when no photo is set");
+  check(card.includes("id-logo-mono"), "monogram logo shows when no logo image is set");
+  check(__app.idMetaText() === "Colour band · CR80 · 85.6 × 54 mm",
+    `meta summary ("${__app.idMetaText()}")`);
+  check(__app.idOnColour("#0d9488") === "#ffffff" && __app.idOnColour("#fef3c7") === "#111827",
+    "accent colour picks a readable text colour");
+
+  // Every template is original and selectable
+  __app.ID_TEMPLATES.forEach((t) => {
+    state.idCard.template = t.slug;
+    check(__app.idCardHtml().includes("id-tpl-" + t.slug), t.name + " template renders");
+  });
+  state.idCard.template = "band";
+
+  // Photo + school logo (shared with the other labels)
+  state.idCard.photo = png;
+  state.logoDataUrl = png;
+  const withImg = __app.idCardHtml();
+  check(withImg.includes('class="id-photo-img"') && withImg.includes('class="id-logo"'),
+    "uploaded photo and logo render as images");
+  state.logoDataUrl = null;
+
+  // Long names step down a size so they still fit
+  check(__app.idNameMm("A much longer staff name that keeps going") < __app.idNameMm("Alex Morgan"),
+    "long names step the card font down");
+  check(__app.idNameMm("A much longer staff name that keeps going") >= 3.2,
+    "card name never shrinks below 3.2mm");
+
+  // Text is escaped
+  state.idCard.school = 'Oak <b>&"High"';
+  const evil = __app.idCardHtml();
+  check(evil.includes("&lt;b&gt;") && !evil.includes("<b>"), "card text is escaped");
+  state.idCard.school = "Oakfield Primary School";
+
+  // One card per page, with the print pipeline class
+  const previewSheet = __app.idSheetsHtml(false);
+  check(previewSheet.includes('class="sheet id-print-sheet"') &&
+        previewSheet.includes("id-card"), "preview is a single CR80 card page");
+  check(__app.idSheetsHtml(true).includes("print-sheet"), "print page keeps .print-sheet");
+  check((previewSheet.match(/class="id-card/g) || []).length === 1, "exactly one card per page");
+
+  // Setup round-trip
+  const payload = __app.exportSetup();
+  check(payload.idCard && payload.idCard.name === "Alex Morgan" &&
+        payload.idCard.template === "band" && payload.idCard.photo === png,
+    "export carries the ID card, photo and template");
+  state.idCard.name = "Changed";
+  state.idCard.template = "clean";
+  state.idCard.colour = "#000000";
+  state.idCard.photo = null;
+  const err = __app.applySetup(JSON.parse(JSON.stringify(payload)));
+  check(err === "", `ID card setup imports cleanly (got "${err}")`);
+  check(state.idCard.name === "Alex Morgan" && state.idCard.template === "band" &&
+        state.idCard.colour === "#0d9488" && state.idCard.photo === png,
+    "ID card name, template, colour and photo restored");
+
+  // Bad imported values are ignored
+  const junk = JSON.parse(JSON.stringify(payload));
+  junk.idCard.template = "nope";
+  junk.idCard.colour = "red";
+  junk.idCard.name = 42;
+  __app.applySetup(junk);
+  check(state.idCard.template === "band" && state.idCard.colour === "#0d9488" &&
+        state.idCard.name === "Alex Morgan", "junk ID card values are ignored");
+
+  check(__app.idPalette().length >= 8, "colour palette offers at least 8 school-friendly colours");
+
+  state.logoDataUrl = null;
+  state.idCard = saved;
 }
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));

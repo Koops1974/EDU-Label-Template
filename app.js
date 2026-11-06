@@ -141,6 +141,16 @@ const state = {
     walt: "",
     wilf: ["", "", "", ""],
   },
+  /* Staff ID card (CR80, 85.6 x 54 mm) — one card, re-printed as needed */
+  idCard: {
+    template: "band",
+    colour: /^#[0-9a-fA-F]{6}$/.test(SCHOOL_CONFIG.primaryColor)
+      ? SCHOOL_CONFIG.primaryColor.toLowerCase() : "#1d4ed8",
+    school: SCHOOL_CONFIG.schoolName,
+    name: "",
+    jobTitle: "",
+    photo: null,     // dataURL
+  },
   opts: {
     showGuides: true,
     color: true,
@@ -1065,11 +1075,17 @@ function renderPreview() {
 function renderPrintRoot() {
   const root = $("#printRoot");
   /* Tray mode keeps #printRoot stocked with tray pages so Ctrl+P works. */
-  let inTray = false;
+  let inTray = false, inId = false;
   try {
     inTray = !!(document.body && document.body.classList &&
       document.body.classList.contains("tray-mode"));
-  } catch (e) { inTray = false; }
+    inId = !!(document.body && document.body.classList &&
+      document.body.classList.contains("id-mode"));
+  } catch (e) { inTray = false; inId = false; }
+  if (inId) {
+    root.innerHTML = idSheetsHtml(true);
+    return;
+  }
   if (inTray) {
     root.innerHTML = trayState.labels.length ? traySheetsHtml(true) : "";
     return;
@@ -1565,10 +1581,10 @@ function trayRender() {
 function setTrayMode(on) {
   if (document.body && document.body.classList) {
     document.body.classList.toggle("tray-mode", !!on);
+    document.body.classList.remove("id-mode");
   }
-  const b1 = $("#modeLabels"), b2 = $("#modeTray");
-  if (b1) { b1.classList.toggle("is-active", !on); b1.setAttribute("aria-checked", String(!on)); }
-  if (b2) { b2.classList.toggle("is-active", !!on); b2.setAttribute("aria-checked", String(!!on)); }
+  setIdPageRule(false);
+  setModeButtons(on ? "tray" : "labels");
   if (on) trayRender();
   else renderAll();
 }
@@ -1677,6 +1693,294 @@ function initTrayEvents() {
 }
 
 /* =====================================================================
+ *  ID CARDS (CR80) mode
+ *  A single staff card at true CR80 size (85.6 x 54 mm). The accent
+ *  colour, school name, name, job title and photo are all editable and
+ *  saved with the rest of the setup. Images never leave the browser.
+ * ===================================================================== */
+const ID_W = 85.6, ID_H = 54;
+const ID_TEMPLATES = [
+  { slug: "band", name: "Colour band" },
+  { slug: "stripe", name: "Side stripe" },
+  { slug: "clean", name: "Clean white" },
+];
+const ID_COLOURS = [
+  { name: "School colour", hex: String(SCHOOL_CONFIG.primaryColor || "#1d4ed8") },
+  { name: "Navy", hex: "#0b1b3a" },
+  { name: "Blue", hex: "#1d4ed8" },
+  { name: "Teal", hex: "#0d9488" },
+  { name: "Green", hex: "#15803d" },
+  { name: "Purple", hex: "#6d28d9" },
+  { name: "Red", hex: "#b91c1c" },
+  { name: "Orange", hex: "#c2410c" },
+  { name: "Charcoal", hex: "#374151" },
+];
+
+function idDefaultColour() {
+  return /^#[0-9a-fA-F]{6}$/.test(SCHOOL_CONFIG.primaryColor)
+    ? SCHOOL_CONFIG.primaryColor.toLowerCase() : "#1d4ed8";
+}
+function idColour() {
+  const v = state.idCard && state.idCard.colour;
+  return /^#[0-9a-fA-F]{6}$/.test(String(v || "")) ? v : idDefaultColour();
+}
+/* White text on dark accents, dark text on pale ones. */
+function idOnColour(hex) {
+  const h = String(hex || "").replace(/^#/, "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return "#ffffff";
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#111827" : "#ffffff";
+}
+/* The palette drops any duplicate of the school colour. */
+function idPalette() {
+  const out = [], seen = {};
+  ID_COLOURS.forEach((c) => {
+    const hex = /^#[0-9a-fA-F]{6}$/.test(c.hex) ? c.hex.toLowerCase() : "#1d4ed8";
+    if (seen[hex]) return;
+    seen[hex] = 1;
+    out.push({ name: c.name, hex: hex });
+  });
+  return out;
+}
+function idNameMm(text) {
+  const len = String(text || "").trim().length || 1;
+  if (len > 30) return 3.2;
+  if (len > 22) return 3.8;
+  return 4.6;
+}
+function idJobMm(text) {
+  const len = String(text || "").trim().length || 1;
+  if (len > 44) return 2.0;
+  if (len > 30) return 2.3;
+  return 2.6;
+}
+
+const ID_PHOTO_SVG =
+  '<svg viewBox="0 0 40 50" aria-hidden="true">' +
+  '<circle cx="20" cy="16" r="8.5" fill="#c3cedd"/>' +
+  '<path d="M4 50 C4 35 11 29 20 29 C29 29 36 35 36 50 Z" fill="#c3cedd"/>' +
+  "</svg>";
+
+function idPhotoHtml(photo) {
+  if (photo && typeof photo === "string") {
+    return '<img class="id-photo-img" src="' + esc(photo) + '" alt="ID photo">';
+  }
+  return '<span class="id-photo-ph"><span class="id-photo-sil">' + ID_PHOTO_SVG +
+    '</span><span class="id-photo-cap">Photo</span></span>';
+}
+
+function idLogoHtml() {
+  const src = effectiveLogoSrc();
+  if (src) return '<img class="id-logo" src="' + esc(src) + '" alt="School logo">';
+  const mono = String(SCHOOL_CONFIG.logoText || SCHOOL_CONFIG.shortName || "ID").slice(0, 2).toUpperCase();
+  return '<span class="id-logo-mono" aria-hidden="true">' + esc(mono) + "</span>";
+}
+
+function idCardHtml() {
+  const c = state.idCard || {};
+  const tpl = ID_TEMPLATES.filter((t) => t.slug === c.template)[0] || ID_TEMPLATES[0];
+  const colour = idColour(), on = idOnColour(colour);
+  const school = String(c.school || "").trim();
+  const name = String(c.name || "").trim();
+  const job = String(c.jobTitle || "").trim();
+  return (
+    '<div class="id-card id-tpl-' + tpl.slug + '" style="--id-accent:' + esc(colour) +
+      ";--id-on:" + esc(on) + ';">' +
+      '<div class="id-band">' +
+        '<span class="id-band-school">' + esc(school) + "</span>" +
+        '<span class="id-band-logo">' + idLogoHtml() + "</span>" +
+      "</div>" +
+      '<div class="id-main">' +
+        '<div class="id-photo">' + idPhotoHtml(c.photo) + "</div>" +
+        '<div class="id-details">' +
+          '<div class="id-school">' + esc(school) + "</div>" +
+          '<div class="id-name" style="font-size:' + idNameMm(name) + 'mm;">' +
+            esc(name || "Staff name") + "</div>" +
+          '<div class="id-job" style="font-size:' + idJobMm(job) + 'mm;">' +
+            esc(job || "Job title") + "</div>" +
+          '<div class="id-rule"></div>' +
+        "</div>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+/* One card per page, using the same .sheet / .print-sheet print pipeline. */
+function idSheetsHtml(printMode) {
+  return '<div class="sheet id-print-sheet' + (printMode ? " print-sheet" : "") + '">' +
+    '<div class="sheet-pad">' + idCardHtml() + "</div></div>";
+}
+
+function idMetaText() {
+  const c = state.idCard || {};
+  const tpl = ID_TEMPLATES.filter((t) => t.slug === c.template)[0] || ID_TEMPLATES[0];
+  return tpl.name + " · CR80 · " + ID_W.toFixed(1) + " × " + ID_H + " mm";
+}
+
+/* Push saved state back into the ID panel (mode switch / setup import). */
+function idSyncInputs() {
+  const c = state.idCard || {};
+  const school = $("#idSchool"), name = $("#idName"), job = $("#idJob"), custom = $("#idColourCustom");
+  if (school) school.value = c.school || "";
+  if (name) name.value = c.name || "";
+  if (job) job.value = c.jobTitle || "";
+  if (custom) custom.value = idColour();
+}
+
+function idRender() {
+  const c = state.idCard || {};
+
+  const grid = $("#idTplGrid");
+  if (grid && !grid.dataset.built) {
+    grid.dataset.built = "1";
+    grid.innerHTML = ID_TEMPLATES.map((t) =>
+      '<button type="button" class="id-tpl-card id-thumb-' + t.slug + '" data-tpl="' + t.slug +
+      '" role="radio" aria-checked="false">' +
+      '<span class="id-tpl-thumb" aria-hidden="true"></span>' +
+      '<span class="id-tpl-name">' + t.name + "</span></button>"
+    ).join("");
+    grid.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-tpl]");
+      if (!card) return;
+      state.idCard.template = card.dataset.tpl;
+      idRender();
+    });
+  }
+
+  const sw = $("#idColourRow");
+  if (sw && !sw.dataset.built) {
+    sw.dataset.built = "1";
+    sw.innerHTML = idPalette().map((p) =>
+      '<button type="button" class="id-swatch" data-colour="' + p.hex + '" title="' + esc(p.name) +
+      '" aria-label="' + esc(p.name) + ' colour" style="background:' + p.hex + ';"></button>'
+    ).join("");
+    sw.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-colour]");
+      if (!b) return;
+      state.idCard.colour = b.dataset.colour;
+      idRender();
+    });
+  }
+
+  const colour = idColour();
+  $$("#idTplGrid [data-tpl]").forEach((b) => {
+    const on = b.dataset.tpl === (c.template || ID_TEMPLATES[0].slug);
+    b.classList.toggle("selected", on);
+    b.setAttribute("aria-checked", String(on));
+  });
+  $$("#idColourRow [data-colour]").forEach((b) => {
+    b.classList.toggle("is-active", String(b.dataset.colour).toLowerCase() === colour.toLowerCase());
+  });
+  const custom = $("#idColourCustom");
+  if (custom && String(custom.value).toLowerCase() !== colour.toLowerCase()) custom.value = colour;
+
+  const cont = $("#idSheetContainer");
+  if (cont) cont.innerHTML = idSheetsHtml(false);
+  const meta = $("#idMeta");
+  if (meta) meta.textContent = idMetaText();
+
+  const hasName = String(c.name || "").trim() !== "";
+  const pb = $("#idPrintBtn");
+  if (pb) pb.disabled = !hasName;
+  const note = $("#idPrintNote");
+  if (note) {
+    note.textContent = hasName
+      ? "Print one card per page at 100% / Actual size. Set the card printer to CR80 (85.6 × 54 mm), margins None, background graphics On."
+      : "Enter a name to enable printing. Set the card printer to CR80 (85.6 × 54 mm), margins None.";
+  }
+  const photoBtn = $("#idPhotoBtn");
+  if (photoBtn) photoBtn.textContent = c.photo ? "📷 Change ID photo…" : "📷 Add ID photo…";
+  const photoClear = $("#idPhotoClear");
+  if (photoClear) photoClear.hidden = !c.photo;
+
+  /* Keep Ctrl+P in ID mode stocked with the card page. */
+  const root = $("#printRoot");
+  if (root && document.body && document.body.classList &&
+      document.body.classList.contains("id-mode")) {
+    root.innerHTML = idSheetsHtml(true);
+  }
+}
+
+/* The card printer needs a CR80 page, not A4. Swap the @page rule while
+ * ID mode is active and clear it again when the teacher goes back. */
+function setIdPageRule(on) {
+  const el = $("#idPageStyle");
+  if (el) el.textContent = on ? "@page { size: 85.6mm 54mm; margin: 0; }" : "";
+}
+
+function setModeButtons(mode) {
+  [["#modeLabels", "labels"], ["#modeTray", "tray"], ["#modeId", "id"]].forEach(([sel, m]) => {
+    const b = $(sel);
+    if (!b) return;
+    const on = m === mode;
+    b.classList.toggle("is-active", on);
+    b.setAttribute("aria-checked", String(on));
+  });
+}
+
+function setIdMode(on) {
+  if (document.body && document.body.classList) {
+    document.body.classList.toggle("id-mode", !!on);
+    document.body.classList.remove("tray-mode");
+  }
+  setIdPageRule(!!on);
+  setModeButtons(on ? "id" : "labels");
+  if (on) { idSyncInputs(); idRender(); }
+  else renderAll();
+}
+
+function initIdEvents() {
+  const modeId = $("#modeId");
+  if (modeId) modeId.addEventListener("click", () => setIdMode(true));
+
+  const custom = $("#idColourCustom");
+  if (custom) custom.addEventListener("input", () => {
+    if (!/^#[0-9a-fA-F]{6}$/.test(custom.value)) return;
+    state.idCard.colour = custom.value.toLowerCase();
+    idRender();
+  });
+
+  [["#idSchool", "school"], ["#idName", "name"], ["#idJob", "jobTitle"]].forEach(([sel, key]) => {
+    const el = $(sel);
+    if (!el) return;
+    el.addEventListener("input", () => {
+      state.idCard[key] = el.value;
+      idRender();
+    });
+  });
+
+  /* School logo uses the same upload as the pupil/tray labels. */
+  const logoBtn = $("#idLogoBtn");
+  if (logoBtn) logoBtn.addEventListener("click", () => { if (logoInput) logoInput.click(); });
+
+  const photoBtn = $("#idPhotoBtn"), photoFile = $("#idPhotoFile");
+  if (photoBtn && photoFile) photoBtn.addEventListener("click", () => photoFile.click());
+  if (photoFile) photoFile.addEventListener("change", () => {
+    const f = photoFile.files[0];
+    if (!f || !/^image\//.test(f.type)) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.idCard.photo = reader.result;
+      idRender();
+    };
+    reader.readAsDataURL(f);
+    photoFile.value = "";
+  });
+  const photoClear = $("#idPhotoClear");
+  if (photoClear) photoClear.addEventListener("click", () => {
+    state.idCard.photo = null;
+    idRender();
+  });
+
+  const printBtn = $("#idPrintBtn");
+  if (printBtn) printBtn.addEventListener("click", () => {
+    const root = $("#printRoot");
+    if (root) root.innerHTML = idSheetsHtml(true);
+    window.print();
+  });
+}
+
+/* =====================================================================
  *  Options sync + setup export / import
  *  Setup = layout, template, options, marking content and logo, saved
  *  as a JSON file the teacher downloads and reloads later. Nothing is
@@ -1770,6 +2074,7 @@ function syncControlsFromState() {
   renderMarkingEditor();
   syncMarkingInputs();
   syncSimpleInputs();
+  idSyncInputs();
   refreshLogoRow();
 }
 
@@ -1784,6 +2089,7 @@ function exportSetup() {
     opts: Object.assign({}, state.opts),
     banner: Object.assign({}, state.banner, { wilf: (state.banner.wilf || []).slice() }),
     simple: { walt: state.simple.walt, wilf: (state.simple.wilf || []).slice() },
+    idCard: Object.assign({}, state.idCard),
     logoDataUrl: state.logoDataUrl || null,
   };
 }
@@ -1830,11 +2136,21 @@ function applySetup(data) {
       state.simple.wilf = [0, 1, 2, 3].map((i) => (typeof sm.wilf[i] === "string" ? sm.wilf[i] : ""));
     }
   }
+  const idc = data.idCard;
+  if (idc && typeof idc === "object") {
+    if (ID_TEMPLATES.some((t) => t.slug === idc.template)) state.idCard.template = idc.template;
+    if (/^#[0-9a-fA-F]{6}$/.test(String(idc.colour || ""))) state.idCard.colour = String(idc.colour).toLowerCase();
+    ["school", "name", "jobTitle"].forEach((k) => {
+      if (typeof idc[k] === "string") state.idCard[k] = idc[k];
+    });
+    if (typeof idc.photo === "string" || idc.photo === null) state.idCard.photo = idc.photo;
+  }
   if (typeof data.logoDataUrl === "string" || data.logoDataUrl === null) state.logoDataUrl = data.logoDataUrl;
 
   syncControlsFromState();
   renderTemplateList();
   renderAll();
+  idRender();
   return "";
 }
 
@@ -1855,6 +2171,8 @@ function initLogoUpload() {
     reader.onload = () => {
       state.logoDataUrl = reader.result;
       renderAll();
+      refreshLogoRow();
+      idRender();
     };
     reader.readAsDataURL(f);
   });
@@ -1883,6 +2201,7 @@ function addLogoRow() {
     row.remove();
     renderAll();
     addLogoRow();
+    idRender();
   });
   row.appendChild(btn);
   row.appendChild(clear);
@@ -2324,6 +2643,7 @@ function initEvents() {
 
   initLogoUpload();
   initTrayEvents();
+  initIdEvents();
 }
 
 function readFile(f) {
