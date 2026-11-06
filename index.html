@@ -50,7 +50,7 @@
 }
 </script>
 
-<link rel="stylesheet" href="styles.css?v=26">
+<link rel="stylesheet" href="styles.css?v=27">
 <style id="idPageStyle"></style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏷️</text></svg>">
   <!-- Google tag (gtag.js) -->
@@ -83,10 +83,14 @@
         <button type="button" class="mode-btn" id="modeTray" role="radio" aria-checked="false">Tray labels</button>
         <button type="button" class="mode-btn" id="modeId" role="radio" aria-checked="false">ID cards</button>
       </div>
-      <button type="button" class="header-link" id="exportSetup" title="Download your layout, fonts and content as a file">Export setup…</button>
+      <button type="button" class="header-link" id="exportSetup" title="Download your layout, fonts and content as a file. Your settings also save automatically in this browser.">Export setup…</button>
       <button type="button" class="header-link" id="importSetup" title="Load a saved setup file">Import setup…</button>
       <input type="file" id="importSetupFile" accept="application/json,.json" hidden>
       <span class="header-hint" id="setupHint"></span>
+      <span class="save-state" id="autosaveHint" aria-live="polite"
+            title="Your layout, ID card and tray labels are stored in this browser only">Auto-saves on this device</span>
+      <button type="button" class="header-link" id="clearSavedSetup"
+              title="Clear the setup auto-saved in this browser and reload with the defaults">Clear saved</button>
       <a class="header-link" href="print-guide.html" target="_blank" rel="noopener">🖨️ Printing guide</a>
       <a class="header-link" href="feedback.html">💬 Feedback</a>
       <a class="header-link" href="https://ko-fi.com/Q2K727N8IU" target="_blank" rel="noopener">☕ Buy me a coffee</a>
@@ -839,7 +843,7 @@
 
 <script src="lib/papaparse.min.js?v=5"></script>
 <script src="config.js?v=7"></script>
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     const sel = document.getElementById("layoutSelect");

@@ -109,6 +109,16 @@ const readStoredColor = () => {
 };
 const effectiveBarColor = () => readStoredColor() || SCHOOL_CONFIG.primaryColor;
 
+/* Whole-setup auto-save. Layout, design options, ID card and tray labels
+ * are mirrored into this browser's localStorage so a teacher can close the
+ * tab and come back later. Files never leave the device; Export setup still
+ * produces a portable JSON copy. Images are shrunk on upload so the setup
+ * stays inside the usual 5 MB browser quota. */
+const SETUP_KEY = "labelMakerSetupV1";
+let saveReady = false;
+let saveTimer = null;
+let autoHintTimer = null;
+
 /* =====================================================================
  *  App state
  * ===================================================================== */
@@ -1221,6 +1231,7 @@ function renderAll() {
                 : "Choose 'Save as PDF' in the print dialog for a printable file.")));
   setStepChips();
   setMapStatus();
+  scheduleSave();
 }
 
 /* =====================================================================
@@ -1576,6 +1587,7 @@ function trayRender() {
       document.body.classList.contains("tray-mode")) {
     root.innerHTML = labels.length ? traySheetsHtml(true) : "";
   }
+  scheduleSave();
 }
 
 function setTrayMode(on) {
@@ -1899,6 +1911,7 @@ function idRender() {
       document.body.classList.contains("id-mode")) {
     root.innerHTML = idSheetsHtml(true);
   }
+  scheduleSave();
 }
 
 /* The card printer needs a CR80 page, not A4. Swap the @page rule while
@@ -1958,12 +1971,11 @@ function initIdEvents() {
   if (photoFile) photoFile.addEventListener("change", () => {
     const f = photoFile.files[0];
     if (!f || !/^image\//.test(f.type)) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      state.idCard.photo = reader.result;
+    readImageDataUrl(f, { maxW: 900, maxH: 1200, mime: "image/jpeg", quality: 0.86 }, (dataUrl) => {
+      if (!dataUrl) return;
+      state.idCard.photo = dataUrl;
       idRender();
-    };
-    reader.readAsDataURL(f);
+    });
     photoFile.value = "";
   });
   const photoClear = $("#idPhotoClear");
@@ -2090,7 +2102,41 @@ function exportSetup() {
     banner: Object.assign({}, state.banner, { wilf: (state.banner.wilf || []).slice() }),
     simple: { walt: state.simple.walt, wilf: (state.simple.wilf || []).slice() },
     idCard: Object.assign({}, state.idCard),
+    tray: traySnapshot(),
     logoDataUrl: state.logoDataUrl || null,
+  };
+}
+
+/* Tray labels are teacher-authored content, not pupil data, so they travel
+ * with the setup file and the auto-save. */
+function traySnapshot() {
+  return {
+    labels: (trayState.labels || []).map((l) => Object.assign({}, l)),
+    nextId: trayState.nextId,
+    activeId: trayState.activeId,
+    size: trayState.size,
+    gap: trayState.gap,
+    cut: trayState.cut,
+    defaultTpl: trayState.defaultTpl,
+  };
+}
+
+/* Keep only values the tray designer understands — imported or restored
+ * files from older versions can't inject odd colours or template names. */
+function sanitizeTrayLabel(l) {
+  if (!l || typeof l !== "object") return null;
+  const hex = (v) => (/^#[0-9a-fA-F]{6}$/.test(String(v || "")) ? String(v).toLowerCase() : null);
+  const scale = Number(l.scale);
+  return {
+    id: 0,
+    text: typeof l.text === "string" ? l.text : "",
+    subtext: typeof l.subtext === "string" ? l.subtext : "",
+    tpl: TRAY_TEMPLATES.some((t) => t.slug === l.tpl) ? l.tpl : "pastel",
+    bg: hex(l.bg),
+    color: hex(l.color),
+    scale: Number.isFinite(scale) ? clamp(scale, 0.5, 2) : 1,
+    align: ["left", "center", "right"].includes(l.align) ? l.align : "center",
+    decor: ["", "none", "bar", "dots", "star"].includes(l.decor) ? l.decor : "",
   };
 }
 
@@ -2145,18 +2191,142 @@ function applySetup(data) {
     });
     if (typeof idc.photo === "string" || idc.photo === null) state.idCard.photo = idc.photo;
   }
+  const tr = data.tray;
+  if (tr && typeof tr === "object" && Array.isArray(tr.labels)) {
+    const labels = tr.labels.map(sanitizeTrayLabel).filter(Boolean);
+    labels.forEach((l, i) => { l.id = i + 1; });
+    trayState.labels = labels;
+    trayState.nextId = labels.length + 1;
+    trayState.activeId = labels.length ? labels[0].id : null;
+    const wantedActive = Number(tr.activeId);
+    if (labels.some((l) => l.id === wantedActive)) trayState.activeId = wantedActive;
+    if (TRAY_SIZES[tr.size]) trayState.size = tr.size;
+    const g = Number(tr.gap);
+    if (Number.isFinite(g) && g >= 0 && g <= 20) trayState.gap = g;
+    if (["dashed", "solid", "none"].includes(tr.cut)) trayState.cut = tr.cut;
+    if (TRAY_TEMPLATES.some((t) => t.slug === tr.defaultTpl)) trayState.defaultTpl = tr.defaultTpl;
+  }
   if (typeof data.logoDataUrl === "string" || data.logoDataUrl === null) state.logoDataUrl = data.logoDataUrl;
 
   syncControlsFromState();
   renderTemplateList();
   renderAll();
   idRender();
+  trayRender();
   return "";
+}
+
+/* ---------------------------------------------------------------------
+ *  Auto-save / restore
+ *  The setup is written to localStorage a moment after each change.
+ *  Only settings and teacher-authored content are stored — uploaded pupil
+ *  CSV files are deliberately left out.
+ * ------------------------------------------------------------------- */
+function currentMode() {
+  const cl = document.body && document.body.classList;
+  if (!cl) return "labels";
+  if (cl.contains("id-mode")) return "id";
+  if (cl.contains("tray-mode")) return "tray";
+  return "labels";
+}
+
+function setupSnapshot() {
+  const snap = exportSetup();
+  snap.mode = currentMode();
+  return snap;
+}
+
+function setAutoHint(message, state, clearAfter) {
+  const el = (typeof document.getElementById === "function")
+    ? document.getElementById("autosaveHint") : null;
+  if (!el) return;
+  el.textContent = message;
+  el.classList.remove("is-saved", "is-warn");
+  if (state === "saved") el.classList.add("is-saved");
+  else if (state === "warn") el.classList.add("is-warn");
+  if (autoHintTimer) { clearTimeout(autoHintTimer); autoHintTimer = null; }
+  if (clearAfter) {
+    autoHintTimer = setTimeout(() => {
+      el.textContent = "Auto-saves on this device";
+      el.classList.remove("is-saved", "is-warn");
+    }, clearAfter);
+  }
+}
+
+function saveSettingsNow() {
+  if (!saveReady) return;
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+  try {
+    localStorage.setItem(SETUP_KEY, JSON.stringify(setupSnapshot()));
+    setAutoHint("✓ Saved on this device", "saved", 1800);
+  } catch (e) {
+    setAutoHint("⚠ Storage full — use Export setup…", "warn", 0);
+  }
+}
+
+function scheduleSave() {
+  if (!saveReady) return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveSettingsNow, 400);
+}
+
+/* Restore the last auto-saved setup, including which mode was open. */
+function loadSavedSetup() {
+  let raw = null;
+  try { raw = localStorage.getItem(SETUP_KEY); } catch (e) { return false; }
+  if (!raw) return false;
+  let data = null;
+  try { data = JSON.parse(raw); } catch (e) { return false; }
+  if (applySetup(data)) return false;
+  if (data.mode === "id") setIdMode(true);
+  else if (data.mode === "tray") setTrayMode(true);
+  return true;
 }
 
 /* Optional logo upload (client-side only — the image is read into the
  * page and never uploaded anywhere). */
 let logoInput = null;
+
+/* Read an image file and shrink it where the browser can. Photos and logos
+ * are printed at a few centimetres wide, so 800–1000 px is plenty and keeps
+ * the auto-saved setup well inside the browser storage quota. */
+function readImageDataUrl(file, opts, done) {
+  const o = opts || {};
+  const maxW = o.maxW || 1000, maxH = o.maxH || 1000;
+  const mime = o.mime || "image/jpeg";
+  const quality = typeof o.quality === "number" ? o.quality : 0.86;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const raw = String(reader.result || "");
+    if (!raw) { done(null); return; }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const nw = img.naturalWidth || img.width || maxW;
+        const nh = img.naturalHeight || img.height || maxH;
+        const scale = Math.min(1, maxW / nw, maxH / nh);
+        if (scale >= 0.999 && raw.length < 250000) { done(raw); return; }
+        const w = Math.max(1, Math.round(nw * scale));
+        const h = Math.max(1, Math.round(nh * scale));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        if (!ctx) { done(raw); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        done(c.toDataURL(mime, quality));
+      } catch (e) { done(raw); }
+    };
+    img.onerror = () => done(raw);
+    img.src = raw;
+  };
+  reader.onerror = () => done(null);
+  reader.readAsDataURL(file);
+}
+
+function imageMimeFor(file, transparent) {
+  return (transparent && /png|gif|svg/i.test(file.type)) ? "image/png" : "image/jpeg";
+}
+
 function initLogoUpload() {
   if (logoInput) return;
   logoInput = document.createElement("input");
@@ -2167,14 +2337,13 @@ function initLogoUpload() {
   logoInput.addEventListener("change", () => {
     const f = logoInput.files[0];
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      state.logoDataUrl = reader.result;
+    readImageDataUrl(f, { maxW: 900, maxH: 900, mime: imageMimeFor(f, true), quality: 0.9 }, (dataUrl) => {
+      if (!dataUrl) return;
+      state.logoDataUrl = dataUrl;
       renderAll();
       refreshLogoRow();
       idRender();
-    };
-    reader.readAsDataURL(f);
+    });
   });
   addLogoRow();
 }
@@ -2441,9 +2610,10 @@ function initEvents() {
     const mkUpload = (fileInput, onChange) => fileInput.addEventListener("change", () => {
       const f = fileInput.files[0];
       if (!f) return;
-      const r = new FileReader();
-      r.onload = () => { onChange(r.result); syncMarkingInputs(); renderAll(); };
-      r.readAsDataURL(f);
+      readImageDataUrl(f, { maxW: 1100, maxH: 1100, mime: imageMimeFor(f, true), quality: 0.9 }, (dataUrl) => {
+        if (!dataUrl) return;
+        onChange(dataUrl); syncMarkingInputs(); renderAll();
+      });
     });
     const clubInput = document.createElement("input");
     clubInput.type = "file"; clubInput.accept = "image/*"; clubInput.hidden = true;
@@ -2569,6 +2739,17 @@ function initEvents() {
     });
   }
 
+  /* Forget the auto-saved setup and start again with config defaults. */
+  const clearSaved = $("#clearSavedSetup");
+  if (clearSaved) clearSaved.addEventListener("click", () => {
+    const ok = window.confirm(
+      "Clear the settings saved in this browser and reload with the defaults?\n\n" +
+      "Any setup files you exported are not affected.");
+    if (!ok) return;
+    try { localStorage.removeItem(SETUP_KEY); } catch (e) { /* private mode */ }
+    window.location.reload();
+  });
+
   /* Print-offset calibration (mm, saved per-browser). Negative y moves
    * everything UP, negative x moves LEFT — same convention as config.js. */
   const stored = readStoredCal() || { x: 0, y: 0 };
@@ -2693,6 +2874,11 @@ document.addEventListener("DOMContentLoaded", () => {
   setupBranding();
   renderTemplateList();
   renderMapping();
+  /* Wire uploads before restoring so the logo row isn't added twice. */
+  initLogoUpload();
+  const restored = loadSavedSetup();
   renderAll();
   initEvents();
+  saveReady = true;
+  if (restored) setAutoHint("✓ Settings restored", "saved", 2600);
 });

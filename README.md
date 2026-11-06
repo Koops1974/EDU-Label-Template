@@ -16,6 +16,7 @@ Everything runs **in your browser**. Upload a CSV, choose your label sheet, clic
 - **Three label layouts**: Classic, Badge, Minimal
 - **Tray Labels mode** (header switch) — free-placement classroom tray/pupil labels in 60×30, 90×40 or 100×50 mm, with four original designs, dashed cut guides and the same one-click print pipeline
 - **ID Cards mode** (header switch) — CR80 staff cards at 85.6 × 54 mm with three original templates, school name and logo, name, job title, photo placeholder, school-colour palette and the same setup save/load
+- **Remembers your setup** — layout, design options, ID card and tray labels auto-save in this browser; **Export setup…** / **Import setup…** move the same setup between devices. Pupil CSV files are never saved
 - **Fully offline** — all libraries vendored, no CDN, no tracking, no analytics
 
 ---
@@ -97,7 +98,7 @@ This tool is designed to be safe for pupil data:
 - **No server, no database, no analytics.** Your CSV never leaves the device — there is no upload endpoint to send it to.
 - All parsing, rendering and PDF creation happen in the browser.
 - The only external code is the vendored, local copy of [Papa Parse](https://www.papaparse.com/) (MIT licence) in `lib/`.
-- No cookies, no local storage of pupil data, no tracking pixels.
+- No cookies, no tracking pixels. Your layout, design options, ID card fields and tray labels are remembered in this browser's local storage so they survive a reload; uploaded pupil CSV files are never stored. Use **Clear saved** in the header to remove the saved setup.
 - Suggested privacy-policy wording for your school website:
 
 > *“Our label maker processes pupil-provided information entirely within the visitor's own browser. Files are not uploaded to, stored by, or transmitted to any server. The tool uses no cookies and no analytics. Users are advised to dispose of printed labels containing personal data appropriately and to handle pupil lists in line with our [school] data-protection policy.”*

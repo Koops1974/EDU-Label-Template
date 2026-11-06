@@ -46,7 +46,7 @@ const appSrc = fs.readFileSync(path.join(__dirname, "app.js"), "utf8")
   .replace('const SAMPLE_CSV = [', 'global.SAMPLE_CSV = [')
   .replace(
     /document\.addEventListener\("DOMContentLoaded", \(\) => \{[\s\S]*$/,
-    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, buildSimpleCell, simpleContentHtml, markingContentHtml, effectiveLogoSrc, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText, trayState, trayPlan, traySheetsHtml, trayLabelHtml, trayAddLabel, trayDuplicateLabel, trayRemoveLabel, trayMoveLabel, trayAddStarters, trayClearLabels, trayActiveLabel, trayMetaText, ID_TEMPLATES, idCardHtml, idSheetsHtml, idMetaText, idNameMm, idJobMm, idOnColour, idPalette };"
+    "global.__app = { autoMap, buildSheets, planFills, labelContentHtml, buildLabelCell, buildGraphicCell, buildMarkingCell, buildSimpleCell, simpleContentHtml, markingContentHtml, effectiveLogoSrc, graphicSrc, fieldValue, fullName, calibrationSheetHtml, CAL, handleCsvText, updateSkippedNote, decodeCsvBuffer, repairMojibake, pastedToCsv, exportSetup, applySetup, chipsText, mapStatusText, trayState, trayPlan, traySheetsHtml, trayLabelHtml, trayAddLabel, trayDuplicateLabel, trayRemoveLabel, trayMoveLabel, trayAddStarters, trayClearLabels, trayActiveLabel, trayMetaText, ID_TEMPLATES, idCardHtml, idSheetsHtml, idMetaText, idNameMm, idJobMm, idOnColour, idPalette, traySnapshot, sanitizeTrayLabel, setupSnapshot, currentMode };"
   );
 eval(appSrc);
 
@@ -853,6 +853,44 @@ console.log("ID cards (CR80):");
 
   state.logoDataUrl = null;
   state.idCard = saved;
+}
+
+console.log("Auto-save / settings persistence:");
+{
+  const ts = __app.trayState;
+  const savedTray = JSON.parse(JSON.stringify(ts));
+  const savedId = JSON.parse(JSON.stringify(state.idCard));
+  const savedLayout = state.layout, savedTemplate = state.template;
+
+  state.idCard.name = "Sam Taylor";
+  state.idCard.template = "stripe";
+  ts.labels = [
+    { id: 1, text: "Maths", subtext: "Set 1", tpl: "bold", bg: null, color: null, scale: 1.2, align: "left", decor: "bar" },
+    { id: 2, text: "English", subtext: "", tpl: "pastel", bg: "#112233", color: "#ffffff", scale: 1, align: "center", decor: "none" },
+  ];
+  ts.nextId = 3; ts.activeId = 2; ts.size = "large"; ts.gap = 5; ts.cut = "solid"; ts.defaultTpl = "bold";
+
+  const snap = __app.setupSnapshot();
+  check(snap.app === "edu-label-maker" && snap.mode === "labels", "snapshot identifies the app and current mode");
+  check(snap.idCard.name === "Sam Taylor" && snap.idCard.template === "stripe", "snapshot carries the ID card");
+  check(snap.tray && snap.tray.labels.length === 2 && snap.tray.labels[1].text === "English", "snapshot carries tray labels");
+  check(snap.tray.size === "large" && snap.tray.gap === 5 && snap.tray.cut === "solid", "snapshot carries tray layout");
+
+  ts.labels = []; ts.size = "medium"; ts.gap = 3; ts.cut = "dashed"; ts.defaultTpl = "pastel";
+  state.idCard.name = "Changed"; state.idCard.template = "clean";
+  const err = __app.applySetup(JSON.parse(JSON.stringify(snap)));
+  check(err === "", `auto-saved setup restores cleanly (got "${err}")`);
+  check(state.idCard.name === "Sam Taylor" && state.idCard.template === "stripe", "ID card restored from the auto-save");
+  check(ts.labels.length === 2 && ts.labels[1].text === "English" && ts.labels[1].scale === 1, "tray labels restored from the auto-save");
+  check(ts.size === "large" && ts.gap === 5 && ts.cut === "solid" && ts.defaultTpl === "bold", "tray layout restored from the auto-save");
+
+  const allowed = __app.sanitizeTrayLabel({ text: "X", tpl: "NOPE", bg: "red", color: "#123456", scale: 99, align: "centre", decor: "sparkle" });
+  check(allowed.tpl === "pastel" && allowed.bg === null && allowed.color === "#123456" &&
+        allowed.scale === 2 && allowed.align === "center" && allowed.decor === "", "junk tray values are sanitized");
+
+  ts.labels = savedTray.labels; ts.nextId = savedTray.nextId; ts.activeId = savedTray.activeId;
+  ts.size = savedTray.size; ts.gap = savedTray.gap; ts.cut = savedTray.cut; ts.defaultTpl = savedTray.defaultTpl;
+  state.idCard = savedId; state.layout = savedLayout; state.template = savedTemplate;
 }
 
 console.log("Result: " + (failures ? failures + " FAILURES" : "ALL CHECKS PASSED"));
